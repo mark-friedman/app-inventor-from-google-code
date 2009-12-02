@@ -46,7 +46,7 @@ EMAIL_SENDER_ADDRESS = "aigameserver@gmail.com"
 def run_with_response(req_handler, operation, *args, **kwargs):
   try:
     response = operation(*args, **kwargs)
-    response.write_to_handler(req_handler)
+    Operation_Response(contents = response).write_to_handler(req_handler)
   except ValueError, e:
     Operation_Response(contents = e.__str__(),
                        error = True).write_to_handler(req_handler)
@@ -54,7 +54,7 @@ def run_with_response(req_handler, operation, *args, **kwargs):
 def run_with_response_as_transaction(req_handler, operation, *args, **kwargs):
   try:
     response = db.run_in_transaction(operation, *args, **kwargs)
-    response.write_to_handler(req_handler)
+    Operation_Response(contents = response).write_to_handler(req_handler)
   except ValueError, e:
     Operation_Response(contents = e.__str__(),
                        error = True).write_to_handler(req_handler)
@@ -95,7 +95,6 @@ class Operation_Response():
                              ERROR_RESPONSE_KEY : self.error,
                              CONTENTS_RESPONSE_KEY : self.contents})
 
-# Writes response and handles exception inside method
 def set_leader(gid, iid, leader):
   check_gameid(gid)
   check_instanceid(iid)
@@ -104,7 +103,7 @@ def set_leader(gid, iid, leader):
   if leader in instance.players:
     instance.leader = leader
     instance.put()
-    return Operation_Response(contents = leader)
+    return leader
   else:
     raise ValueError("Player %s is not a member of instance %s."
                      % (leader, iid))
@@ -131,7 +130,7 @@ def new_message(gid, iid, message_type, message_recipients, message_content):
                     content = content_list)
       message_list.append(message)
     db.put(message_list)
-    return Operation_Response(contents = message_list[0].to_dictionary())
+    return message_list[0].to_dictionary()
  
 # TODO make this dispatch using a dictionary
 # TODO add a way for separate modules to register sys calls with this method.
@@ -149,9 +148,7 @@ def sys_message(instance, message_type, message_recipients, message_content):
     reply = add_to_scoreboard(instance, message_content[0], delta)
   else:
     raise ValueError("Message type was not valid")
-  return Operation_Response(contents = {'mtype' : message_type,
-                                        'mcont': reply,
-                                        'mrec' : 'system'})
+  return {'mtype' : message_type, 'mcont': reply, 'mrec' : 'system'}
 
 def send_email(message_recipient, message_content):
   mail.send_mail(sender=EMAIL_SENDER,
@@ -197,8 +194,7 @@ def accept_invite(gid, iid, pid):
   pid = check_playerid(pid)
   instance = get_instance_model(gid, iid)
   db.run_in_transaction(accept_invite_update_instance, instance, pid)
-  return Operation_Response(contents =
-                            get_accept_invite_response(gid, iid, pid, instance))
+  return get_accept_invite_response(gid, iid, pid, instance)
 
 def accept_invite_update_instance(instance, pid):
   if pid not in instance.invited and not instance.public:
@@ -221,10 +217,8 @@ def invite_player(gid, iid, pid):
   if pid not in instance.invited:
     instance.invited.append(pid)
     instance.put()
-    return Operation_Response(contents = pid)
-  else:
-    return Operation_Response(contents = pid)
-
+  return pid
+  
 def new_instance(gid, iid_prefix, pid):
   """
   Creates a new instance of the specified game.  The instance id will start
@@ -243,7 +237,7 @@ def new_instance(gid, iid_prefix, pid):
   else:
     iid = make_instance_id(game, iid_prefix)
   db.run_in_transaction(create_game_instance, game, iid, pid)
-  return Operation_Response(contents = iid)
+  return iid
 
 def increment_instance_count(game):
   game.instance_count += 1
@@ -260,7 +254,7 @@ def get_players(gid, iid):
   check_gameid(gid)
   check_instanceid(iid)
   instance = get_instance_model(gid, iid)
-  return Operation_Response(contents = instance.get_players())
+  return instance.get_players()
 
 def get_messages(gid, iid, message_type, recipient, count):
   check_gameid(gid)
@@ -269,10 +263,8 @@ def get_messages(gid, iid, message_type, recipient, count):
   if message_type.startswith('sys_'):
     return sys_get_message(instance, message_type, recipient, count)
   else:
-    return Operation_Response(contents =
-                              instance.get_messages(count=count, 
-                                                    message_type=message_type,
-                                                    recipient=recipient))
+    return instance.get_messages(count=count, message_type=message_type,
+                                 recipient=recipient)
 
 def sys_get_message(instance, message_type, recipient, count):
   reply = ''
@@ -283,17 +275,14 @@ def sys_get_message(instance, message_type, recipient, count):
     reply = ["%s: %d" % (k, v) for k, v in instance.get_scoreboard().items()]
   else:
     raise ValueError("Message type was not valid")
-  return Operation_Response(contents =
-                            [{'mtype' : message_type,
-                              'mcont' : reply,
-                              'mrec' : recipient}])
+  return [{'mtype' : message_type, 'mcont' : reply, 'mrec' : recipient}]
 
 
 def get_instance(gid, iid):
   check_gameid(gid)
   check_instanceid(iid)
   instance = get_instance_model(gid, iid)
-  return Operation_Response(contents = instance.to_dictionary())
+  return instance.to_dictionary()
 
 def get_instance_model(gid, iid):
   game_key = Key.from_path('Game', gid, 'GameInstance', iid)
@@ -370,7 +359,7 @@ def get_player_state(gid, iid, pid):
     else:
       player_state['players'] = game.players
       player_state['leader'] = game.leader
-  return Operation_Response(contents = player_state)
+  return player_state
 
 def get_instances_joined(gid, pid):
   query = GameInstance.all()
