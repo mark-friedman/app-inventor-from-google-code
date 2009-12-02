@@ -1,0 +1,15 @@
+Useful commands:
+# Start on local machine on port 9999
+./google_appengine/dev_appserver.py -p 9999
+
+# Uploads to AppSpot
+./google_appengine/appcfg.py update .
+
+# Install packages for unit testing
+sudo easy_install nose
+sudo easy_install nosegae
+sudo easy_install WebTest
+
+# Run the unit tests 
+nosetests --with-gae --without-sandbox -s
+
