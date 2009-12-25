@@ -40,3 +40,11 @@ indexes:
 # manually, move them above the marker line.  The index.yaml file is
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
+
+- kind: Message
+  ancestor: yes
+  properties:
+  - name: msg_type
+  - name: recipients
+  - name: date
+    direction: desc

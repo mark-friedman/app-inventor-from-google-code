@@ -16,21 +16,21 @@ limitations under the License.
 
 import google.appengine.api
 import unittest
-import util
-from game_server.server import application
 from game_server.models import Game
 from game_server.models import GameInstance
+from game_server.server import application
+from game_server.tests import test_utils
 
 gid = 'test_gid'
 firstpid = 'test@test.com'
 
 def setUp():
-  util.clear_data_store()
+  test_utils.clear_data_store()
 
 def test_game_creation():
   game = Game.get_or_insert(key_name = gid)
   assert game.instance_count == 0
-  assert len(game.get_public_instances()) == 0
+  assert len(game.get_public_instances_query().fetch(1)) == 0
   
 def test_instance_creation():
   iid = 'instance_create_iid'
@@ -77,11 +77,14 @@ def test_instance_public():
                           players = [player],
                           leader = player)
   instance.put()
-  assert instance not in game.get_public_instances()
+  assert instance not in game.get_public_instances_query().fetch(1000)
   instance.public = True
   instance.put()
-  public_game = game.get_public_instances()[0]
+  public_game = game.get_public_instances_query().fetch(1)[0]
   assert public_game.to_dictionary() == instance.to_dictionary()
   instance.public = False
   instance.put()
-  assert len(game.get_public_instances()) == 0
+  assert len(game.get_public_instances_query().fetch(1000)) == 0
+
+
+  
