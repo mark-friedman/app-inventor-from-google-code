@@ -14,19 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-import sys, traceback
 import logging
-import re
+import sys
+import traceback
 
+import iso8601
+import models
+import utils
+
+from datetime import datetime
+from django.utils import simplejson
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
-from google.appengine.ext.db import Key
-from google.appengine.api import mail
-from django.utils import simplejson
-from models import Game
-from models import GameInstance
-from models import Message
+
+from server_commands import command_dict
+from custom_commands import custom_command_dict
 
 ####################
 # Module Constants #
@@ -34,10 +37,6 @@ from models import Message
 COMMAND_RESPONSE_KEY = "c"
 ERROR_RESPONSE_KEY = "e"
 CONTENTS_RESPONSE_KEY = "cont"
-EMAIL_ADDRESS_REGEX = ("([0-9a-zA-Z]+[-._+&amp;])*[0-9a-zA-Z]+@"
-                       "([-0-9a-zA-Z]+[.])+[a-zA-Z]{2,6}")
-EMAIL_SENDER = "AppInventorGameServer <aigameserver@gmail.com>"
-EMAIL_SENDER_ADDRESS = "aigameserver@gmail.com"
 
 ##################
 # Module Methods #
@@ -95,11 +94,14 @@ class Operation_Response():
                              ERROR_RESPONSE_KEY : self.error,
                              CONTENTS_RESPONSE_KEY : self.contents})
 
-def set_leader(gid, iid, leader):
-  check_gameid(gid)
-  check_instanceid(iid)
-  pid = check_playerid(leader)
-  instance = get_instance_model(gid, iid)
+def set_leader(gid, iid, pid, leader):
+  utils.check_gameid(gid)
+  utils.check_instanceid(iid)
+  pid = utils.check_playerid(pid)
+  leader = utils.check_playerid(leader)
+  instance = utils.get_instance_model(gid, iid)
+  if pid != instance.leader:
+    return instance.leader
   if leader in instance.players:
     instance.leader = leader
     instance.put()
@@ -108,91 +110,56 @@ def set_leader(gid, iid, leader):
     raise ValueError("Player %s is not a member of instance %s."
                      % (leader, iid))
 
-# TODO add recording of sending player once new version of AI pushes.
-def new_message(gid, iid, message_type, message_recipients, message_content):
-  check_gameid(gid)
-  check_instanceid(iid)
-  instance = get_instance_model(gid, iid)
+def new_message(gid, iid, pid, message_type, message_recipients, message_content):
+  utils.check_gameid(gid)
+  utils.check_instanceid(iid)
+  pid = utils.check_playerid(pid)
+  instance = utils.get_instance_model(gid, iid)
   recipients_list = []
   if message_recipients != '':
     recipients_list = simplejson.loads(message_recipients)
   if not recipients_list:
     recipients_list = ['']
   content_list = simplejson.loads(message_content)
-  if message_type.startswith('sys_'):
-    return sys_message(instance, message_type, recipients_list, content_list)
+  message_list = []
+  for recipient_entry in recipients_list:
+    recipient_entry = utils.check_playerid(recipient_entry)
+    message = models.Message(parent = instance,
+                      sender = pid,
+                      msg_type = message_type,
+                      recipient = recipient_entry,
+                      content = content_list)
+    message_list.append(message)
+  db.put(message_list)
+  return message_list[0].to_dictionary()
+
+def server_command(gid, iid, pid, command, arguments):
+  utils.check_gameid(gid)
+  utils.check_instanceid(iid)
+  pid = utils.check_playerid(pid)
+  instance = utils.get_instance_model(gid, iid)
+  if pid not in instance.players:
+    raise ValueError("%s is not in instance %s" % (pid, iid))
+
+  arguments = simplejson.loads(arguments)
+  reply = ''
+
+  if command in command_dict:
+    reply = command_dict[command](instance, pid, arguments)
+    instance.put()
   else:
-    message_list = []
-    for recipient_entry in recipients_list:
-      message = Message(parent = instance,
-                    msg_type = message_type,
-                    recipient = recipient_entry,
-                    content = content_list)
-      message_list.append(message)
-    db.put(message_list)
-    return message_list[0].to_dictionary()
- 
-# TODO make this dispatch using a dictionary
-# TODO add a way for separate modules to register sys calls with this method.
-def sys_message(instance, message_type, message_recipients, message_content):
-  reply = 'No matching operation found'
-  if message_type == 'sys_email':
-    reply = send_email(message_recipients[0], message_content)
-  elif message_type == 'sys_set_public':
-    reply = set_public(instance, message_content[0])
-  elif message_type == 'sys_set_max_players':
-    max_players = int(message_content[0])
-    reply = set_max_players(instance, max_players)
-  elif message_type == 'sys_change_scoreboard':
-    delta = int(message_content[1])
-    reply = add_to_scoreboard(instance, message_content[0], delta)
-  else:
-    raise ValueError("Message type was not valid")
-  return {'mtype' : message_type, 'mcont': reply, 'mrec' : 'system'}
+    raise ValueError("Invalid server command: %s." % command)
 
-def send_email(message_recipient, message_content):
-  mail.send_mail(sender=EMAIL_SENDER,
-                 to=message_recipient,
-                 subject=message_content[0],
-                 body=message_content[1] + 
-                   '\nMessage sent from AppInventorGameServer.')
-  return "Email sent succesfully"
-
-def set_public(instance, value):
-  if type(value) is not bool:
-    if value == 'true' or value == 'True':
-      value = True
-    elif value == 'false' or value == 'False':
-      value = False
-    else:
-      raise ValueError("Set public boolean value was not valid")
-  instance.public = value
-  instance.put()
-  return value
-
-def set_max_players(instance, max_players):
-  instance.max_players = max_players
-  instance.put()
-  return max_players
-
-def add_to_scoreboard(instance, player, delta):
-  if player not in instance.players:
-    raise ValueError("Cannot change score, %s not in instance %s"
-                     % (player, instance.key().name()))
-  scoreboard = instance.get_scoreboard()
-  if scoreboard.has_key(player):
-    scoreboard[player] += delta
-  else:
-    scoreboard[player] = delta
-  instance.scoreboard = simplejson.dumps(scoreboard)
-  instance.put()
-  return instance.scoreboard
+  if not isinstance(reply, list):
+    reply = [reply]
+  return {'msender' : pid, 'mtype' : command, 'mcont': reply, 
+          'mrec' : 'server_command'}
 
 def accept_invite(gid, iid, pid):
-  check_gameid(gid)
-  check_instanceid(iid)
-  pid = check_playerid(pid)
-  instance = get_instance_model(gid, iid)
+  utils.check_gameid(gid)
+  utils.check_instanceid(iid)
+  pid = utils.check_playerid(pid)
+  instance = utils.get_instance_model(gid, iid)
   db.run_in_transaction(accept_invite_update_instance, instance, pid)
   return get_accept_invite_response(gid, iid, pid, instance)
 
@@ -210,10 +177,10 @@ def accept_invite_update_instance(instance, pid):
   instance.put()
 
 def invite_player(gid, iid, pid):
-  check_gameid(gid)
-  check_instanceid(iid)
-  pid = check_playerid(pid)
-  instance = get_instance_model(gid, iid)
+  utils.check_gameid(gid)
+  utils.check_instanceid(iid)
+  pid = utils.check_playerid(pid)
+  instance = utils.get_instance_model(gid, iid)
   if pid not in instance.invited:
     instance.invited.append(pid)
     instance.put()
@@ -227,9 +194,9 @@ def new_instance(gid, iid_prefix, pid):
   This should not be run inside of a transaction as it invokes db
   transactions itself.
   """
-  check_gameid(gid)
-  pid = check_playerid(pid)
-  game = Game.get_or_insert(key_name = gid, instance_count = 0)    
+  utils.check_gameid(gid)
+  pid = utils.check_playerid(pid)
+  game = models.Game.get_or_insert(key_name = gid, instance_count = 0)    
   db.run_in_transaction(increment_instance_count, game)
   iid = ''
   if not iid_prefix:
@@ -244,78 +211,39 @@ def increment_instance_count(game):
   game.put()
 
 def create_game_instance(game, iid, pid):
-  instance = GameInstance(parent = game,
+  instance = models.GameInstance(parent = game,
                           key_name = iid,
                           players = [pid],
                           leader = pid)
   instance.put()
 
 def get_players(gid, iid):
-  check_gameid(gid)
-  check_instanceid(iid)
-  instance = get_instance_model(gid, iid)
+  utils.check_gameid(gid)
+  utils.check_instanceid(iid)
+  instance = utils.get_instance_model(gid, iid)
   return instance.get_players()
 
-def get_messages(gid, iid, message_type, recipient, count):
-  check_gameid(gid)
-  check_instanceid(iid)
-  instance = get_instance_model(gid, iid)
-  if message_type.startswith('sys_'):
-    return sys_get_message(instance, message_type, recipient, count)
-  else:
-    return instance.get_messages(count=count, message_type=message_type,
-                                 recipient=recipient)
-
-def sys_get_message(instance, message_type, recipient, count):
-  reply = ''
-  if message_type == 'sys_get_public_instances':
-    reply = [i.key().name() for i in
-                instance.parent().get_public_instances(count)]
-  elif message_type == 'sys_get_scoreboard':
-    reply = ["%s: %d" % (k, v) for k, v in instance.get_scoreboard().items()]
-  else:
-    raise ValueError("Message type was not valid")
-  return [{'mtype' : message_type, 'mcont' : reply, 'mrec' : recipient}]
-
+def get_messages(gid, iid, message_type, recipient, count, time):
+  utils.check_gameid(gid)
+  utils.check_instanceid(iid)
+  recipient = utils.check_playerid(recipient)
+  instance = utils.get_instance_model(gid, iid)
+  return instance.get_messages(count=count, message_type=message_type,
+                               recipient=recipient, time=time)
 
 def get_instance(gid, iid):
-  check_gameid(gid)
-  check_instanceid(iid)
-  instance = get_instance_model(gid, iid)
+  utils.check_gameid(gid)
+  utils.check_instanceid(iid)
+  instance = utils.get_instance_model(gid, iid)
   return instance.to_dictionary()
 
-def get_instance_model(gid, iid):
-  game_key = Key.from_path('Game', gid, 'GameInstance', iid)
-  model = db.get(game_key)
-  if model is None:
-    raise ValueError('Instance %s not found.' % iid)
-  return model
-
 def make_instance_id(game, instance_prefix):
+  new_iid = instance_prefix.replace(' ', '')
   new_index = game.instance_count
-  new_iid = instance_prefix + str(new_index)
-  while GameInstance.get_by_key_name(new_iid, parent=game) is not None:
-    new_index += 1
+  while models.GameInstance.get_by_key_name(new_iid, parent=game) is not None:
     new_iid = instance_prefix + str(new_index)
+    new_index += 1
   return new_iid
-
-def check_playerid(pid):
-  if pid is None or pid == "":
-    raise ValueError('The player identifier is blank.')
-  stripped_email = re.search(EMAIL_ADDRESS_REGEX, pid)
-  if stripped_email is None:
-    raise ValueError('%s is not a valid email address.' % pid)
-  return stripped_email.group(0)
-
-def check_gameid(gid):
-  if gid == "" or gid is None:
-    raise ValueError('Bad Game Id: %s' % gid)
-  return gid
-
-def check_instanceid(iid):
-  if iid == "" or iid is None:
-    raise ValueError('No instance specified for request.' % iid)
-  return iid
 
 ##################
 # Writer Helpers #
@@ -331,28 +259,23 @@ def check_instanceid(iid):
 # Be careful, if changing this, to coordinate with write_player_state,
 # because the component uses the same code to read both responses
 def get_accept_invite_response(gid, iid, pid, game):
-  # TODO Remove players, leader and iid from here once the new version
-  # of GameClient code pushes.
   return {'joined' : get_instances_joined(gid, pid),
-          'invited' : get_instances_invited(gid, pid),
-          'players' : game.players,
-          'leader' : game.leader,
-          'iid' : iid}
+          'invited' : get_instances_invited(gid, pid)}
 
 # The gid and pid must be good here, but the iid can be bad, because
 # the player may have instances joined and instances invited even if there
 # is no current game.
 # Throws a value error if the game or player id's are invalid.
 def get_player_state(gid, iid, pid):
-  check_gameid(gid)
-  pid = check_playerid(pid) 
+  utils.check_gameid(gid)
+  pid = utils.check_playerid(pid) 
   player_state = {'joined' : get_instances_joined(gid, pid),
                   'invited' : get_instances_invited(gid, pid)}
   if not iid:
     player_state['players'] = []
     player_state['leader'] = ''
   else:
-    game=get_instance_model(gid,iid)
+    game=utils.get_instance_model(gid,iid)
     if game is None:
       player_state['players'] = []
       player_state['leader'] = ''
@@ -362,16 +285,13 @@ def get_player_state(gid, iid, pid):
   return player_state
 
 def get_instances_joined(gid, pid):
-  query = GameInstance.all()
-  query.filter("players =", pid)
-  query.ancestor(Key.from_path('Game', gid))
+  game_model = db.get(db.Key.from_path('Game', gid))
+  query = game_model.get_joined_instances_query(pid)
   return [inst.key().name() for inst in query]
 
 def get_instances_invited(gid, pid):
-  query = GameInstance.all()
-  query.filter("invited =", pid)
-  query.filter("full =", False)
-  query.ancestor(Key.from_path('Game', gid))
+  game_model = db.get(db.Key.from_path('Game', gid))
+  query = game_model.get_invited_instances_query(pid)
   return [inst.key().name() for inst in query]
 
 ###########################
@@ -445,6 +365,7 @@ class MainPage(webapp.RequestHandler):
         <li><a href="/messages">/messages</a></li>
         <li><a href="/setleader">/setleader</a></li>
         <li><a href="/getinstance">/getinstance</a></li>
+        <li><a href="/servercommand">/servercommand</a></li>
         </ul>''')
 
 class NewInstance(webapp.RequestHandler):
@@ -468,18 +389,14 @@ class NewInstance(webapp.RequestHandler):
        <input type="submit" value="New game">
     </form></body></html>\n''')
 
-
 class InvitePlayer(webapp.RequestHandler):
   def post(self):
     logging.debug('/invite?%s\n|%s|' %
                   (self.request.query_string, self.request.body))
     gid = self.request.get('gid')
     iid = self.request.get('iid')
-    # TODO remove this once AppInventor release pushes.
-    pid = self.request.get('inv')
-    if pid is None or pid == "":
-      pid = self.request.get('pid')
-    run_with_response_as_transaction(self, invite_player, gid, iid, pid)
+    inv = self.request.get('inv')
+    run_with_response_as_transaction(self, invite_player, gid, iid, inv)
 
   def get(self):
     self.response.out.write('''
@@ -542,11 +459,12 @@ class NewMessage(webapp.RequestHandler):
     logging.debug('/newmessage?%s\n|%s|' %
                   (self.request.query_string, self.request.body))
     gid = self.request.get('gid')
+    pid = self.request.get('pid')
     iid = self.request.get('iid')
     message_type = self.request.get('mtype')
     message_recipients = self.request.get('mrec')
     message_content = self.request.get('mcont')
-    run_with_response_as_transaction(self, new_message, gid, iid, message_type,
+    run_with_response_as_transaction(self, new_message, gid, iid, pid, message_type,
                                      message_recipients, message_content)
 
   def get(self):
@@ -598,13 +516,23 @@ class MessageHistory(webapp.RequestHandler):
     iid = self.request.get('iid')
     message_type = self.request.get('mtype')
     recipient = self.request.get('pid')    
+
     count = 1000
     try:
       count = int(self.request.get('count'))
     except ValueError:
       pass
+
+    time = datetime.min
+    try:
+      time_string = self.request.get('mtime')
+      if time_string is not None and time_string != '':
+        time = iso8601.parse_date(time_string)
+    except ValueError:
+      pass
+    
     run_with_response_as_transaction(self, get_messages, gid, iid,
-                                     message_type, recipient, count)
+                                     message_type, recipient, count, time)
 
   def get(self):
     self.response.out.write('''
@@ -626,12 +554,10 @@ class SetLeader(webapp.RequestHandler):
                   (self.request.query_string, self.request.body))
     gid = self.request.get('gid')
     iid = self.request.get('iid')
-
-    # TODO remove this once AppInventor release pushes
     leader = self.request.get('ldr')
-    if leader is None or leader == "":
-      leader = self.request.get('pid')
-    run_with_response_as_transaction(self, set_leader, gid, iid, leader)
+    player = self.request.get('pid')
+
+    run_with_response_as_transaction(self, set_leader, gid, iid, player, leader)
 
   def get(self):
     self.response.out.write('''
@@ -641,11 +567,38 @@ class SetLeader(webapp.RequestHandler):
        <p>Game ID <input type="text" name="gid" /></p>
        <p>Instance ID <input type="text" name="iid" /></p>
        <p>Player ID <input type="text" name="pid" /></p>
-       <p>New leader (player id) <input type="text" name="pid" /> </p>
+       <p>New leader (player id) <input type="text" name="ldr" /> </p>
        <input type="hidden" name="fmt" value="html">
        <input type="submit" value="Set leader holder">
     </form>''')
     self.response.out.write('</body></html>\n')
+
+class ServerCommand(webapp.RequestHandler):
+  def post(self):
+    logging.debug('/servercommand?%s\n|%s|' %
+                  (self.request.query_string, self.request.body))
+    gid = self.request.get('gid')
+    iid = self.request.get('iid')
+    pid = self.request.get('pid')
+    command = self.request.get('comm')
+    arguments = self.request.get('cargs')
+    run_with_response_as_transaction(self, server_command, gid, iid, pid,
+                                     command, arguments)
+
+  def get(self):
+    self.response.out.write('''
+    <html><body>
+    <form action="/servercommand" method="post"
+          enctype=application/x-www-form-urlencoded>
+       <p>Game ID <input type="text" name="gid" /></p>
+       <p>Instance ID <input type="text" name="iid" /></p>
+       <p>Player ID <input type="text" name="pid" /> </p>
+       <p>Command <input type="text" name="comm" /> </p>
+       <p>Arguments (Json array) <input type="text" name="cargs" /> </p>
+       <input type="hidden" name="fmt" value="html">
+       <input type="submit" value="Message">
+    </form>''')
+    self.response.out.write('''</body></html>\n''')
 
 ####################################################
 # Handlers not implemented in GameClient component #
@@ -671,52 +624,28 @@ class GetInstance(webapp.RequestHandler):
     </form>''')
     self.response.out.write('</body></html>\n')
 
-# this could write to the phone, but it's not in the component API
-# if we put it in, need to decide what it should actually write
-class DeleteGame(webapp.RequestHandler):
-  def post(self):
-    logging.debug('/deletegame?%s\n|%s|' %
-                  (self.request.query_string, self.request.body))
-    gid = self.request.get('gid')
-    iid = self.request.get('iid')
-    instanceKey = Key.from_path('Game', gid, 'GameInstance', iid)
-    gameKey = Key.from_path('Game', gid)
-    game = Game.get(parentKey)
-    db.run_in_transaction(delete_instance_and_maybe_parent,
-                          gameKey, game, instanceKey)
-    MessagePattern = 'Deleted instance %s, # remaining instances = %s'
-    write_response(self, MessagePattern %
-                   (gid, iid, game.instance_count), ignore_phone=True)
-
-def delete_instance_and_maybe_parent(parent_key, parent_gameid, game_key):
-  parent_gameid.instance_count -= 1
-  if parent_gameid.instance_count <= 0: 
-    db_safe_delete(parent_key)
-  else: 
-    parent_gameid.put()
-  db_safe_delete(game_key)
-
-# a utility that guards against attempts to delete
-# the same object
-def db_safe_delete(to_delete):
-  if to_delete: db.delete(to_delete)
-
 def application():
   return webapp.WSGIApplication([('/', MainPage),
-                                      ('/newinstance', NewInstance),
-                                      ('/invite', InvitePlayer),
-                                      ('/getplayers', GetPlayers),
-                                      ('/acceptinvite', AcceptInvite),
-                                      ('/newmessage', NewMessage),
-                                      ('/playerstate', PlayerState),
-                                      ('/messages', MessageHistory),
-                                      ('/setleader', SetLeader),
-                                      ('/getinstance', GetInstance)],
-                                     # ('/deletegame', DeleteGame)],
-                                     debug=True)
+                                 ('/newinstance', NewInstance),
+                                 ('/invite', InvitePlayer),
+                                 ('/getplayers', GetPlayers),
+                                 ('/acceptinvite', AcceptInvite),
+                                 ('/newmessage', NewMessage),
+                                 ('/playerstate', PlayerState),
+                                 ('/messages', MessageHistory),
+                                 ('/setleader', SetLeader),
+                                 ('/servercommand', ServerCommand),
+                                 ('/getinstance', GetInstance)],
+                                debug=True)
 
 def main():
   run_wsgi_app(application())
 
 if __name__ == "__main__":
   main()
+
+for command in custom_command_dict.iteritems():
+  if command[0] in command_dict:
+    logging.debug('%s overwritten with custom command in command_dict' %
+                  command[0])
+  command_dict[command[0]] = command[1]

@@ -1,6 +1,6 @@
-Useful commands:
+# Useful commands:
 # Start on local machine on port 9999
-./google_appengine/dev_appserver.py -p 9999
+python2.5 google_appengine/dev_appserver.py -p 9999 .
 
 # Uploads to AppSpot
 ./google_appengine/appcfg.py update .
@@ -9,7 +9,12 @@ Useful commands:
 sudo easy_install nose
 sudo easy_install nosegae
 sudo easy_install WebTest
+sudo easy_install simplejson
 
 # Run the unit tests 
-nosetests --with-gae --without-sandbox -s
+nosetests --with-gae --without-sandbox --gae-lib-root=google_appengine -s
+
+# If you get a "nosetests: error: no such option: --without-sandbox" message, you must make sure that the latest version of nosegae is installed.
+svn checkout http://nose-gae.googlecode.com/svn/trunk/ nose-gae-read-only
+sudo python setup.py install
 

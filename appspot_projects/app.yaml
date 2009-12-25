@@ -13,7 +13,7 @@
 # limitations under the License.
 
 application: appinvgameserverdev
-version: 3
+version: ata
 runtime: python
 api_version: 1
 
