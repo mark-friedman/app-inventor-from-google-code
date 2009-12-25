@@ -286,11 +286,15 @@ def get_player_state(gid, iid, pid):
 
 def get_instances_joined(gid, pid):
   game_model = db.get(db.Key.from_path('Game', gid))
+  if game_model is None:
+    return []
   query = game_model.get_joined_instances_query(pid)
   return [inst.key().name() for inst in query]
 
 def get_instances_invited(gid, pid):
   game_model = db.get(db.Key.from_path('Game', gid))
+  if game_model is None:
+    return []
   query = game_model.get_invited_instances_query(pid)
   return [inst.key().name() for inst in query]
 

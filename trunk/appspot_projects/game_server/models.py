@@ -96,8 +96,9 @@ class GameInstance(db.Expando):
 
   def get_messages(self, time=datetime.min, count=1000, 
                    message_type='', recipient=''):
-    return [message.to_dictionary() for message \
-              in self.query_messages(time, count, message_type, recipient)]
+    return [message.to_dictionary() for message in 
+            reversed(self.query_messages(time, count, 
+                                         message_type, recipient))]
 
   def delete_messages(self, type):
     ''' Deletes up to the 1000 oldest messages of the specified type'''

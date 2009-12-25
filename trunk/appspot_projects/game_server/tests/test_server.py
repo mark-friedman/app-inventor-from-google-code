@@ -216,6 +216,7 @@ def test_get_all_types():
                                     'mtime' : '',
                                     'count' : 2}).json
   assert response['e'] is False
-  assert response['cont'][0]['mtype'] == 'type2'
-  assert response['cont'][1]['mtype'] == 'type1'
+  assert response['cont'][0]['mtype'] == 'type1'
+  assert response['cont'][1]['mtype'] == 'type2'
+
 
