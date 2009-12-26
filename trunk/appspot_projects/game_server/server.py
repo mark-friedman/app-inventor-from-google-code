@@ -59,15 +59,14 @@ def run_with_response_as_transaction(req_handler, operation, *args, **kwargs):
                        error = True).write_to_handler(req_handler)
 
 class Operation_Response():
-  def __init__(self, contents, error=False, ignore_phone=False):
+  def __init__(self, contents, error=False):
     self.contents = contents
     self.error = error
-    self.ignore_phone = ignore_phone
 
   def write_to_handler(self, req_handler):
     if req_handler.request.get('fmt') == 'html':
       self.write_response_to_web(req_handler)
-    elif not self.ignore_phone:
+    else:
       self.write_response_to_phone(req_handler)
 
   def write_response_to_web(self, req_handler):
@@ -90,9 +89,11 @@ class Operation_Response():
         self.get_response_object(req_handler.request.path))
     
   def get_response_object(self, command):
-    return simplejson.dumps({COMMAND_RESPONSE_KEY : command,
+    response = simplejson.dumps({COMMAND_RESPONSE_KEY : command,
                              ERROR_RESPONSE_KEY : self.error,
                              CONTENTS_RESPONSE_KEY : self.contents})
+    logging.debug('response object: %s' % response)
+    return response
 
 def set_leader(gid, iid, pid, leader):
   utils.check_gameid(gid)
@@ -135,18 +136,20 @@ def new_message(gid, iid, pid, message_type, message_recipients, message_content
 
 def server_command(gid, iid, pid, command, arguments):
   utils.check_gameid(gid)
-  utils.check_instanceid(iid)
   pid = utils.check_playerid(pid)
-  instance = utils.get_instance_model(gid, iid)
-  if pid not in instance.players:
-    raise ValueError("%s is not in instance %s" % (pid, iid))
+  model = None
+  try:
+    utils.check_instanceid(iid)
+    model = utils.get_instance_model(gid, iid)
+  except ValueError:
+    model = utils.get_game_model(gid)
 
   arguments = simplejson.loads(arguments)
   reply = ''
 
   if command in command_dict:
-    reply = command_dict[command](instance, pid, arguments)
-    instance.put()
+    reply = command_dict[command](model, pid, arguments)
+    model.put()
   else:
     raise ValueError("Invalid server command: %s." % command)
 

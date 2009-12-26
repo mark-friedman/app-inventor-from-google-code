@@ -68,8 +68,12 @@ def add_to_scoreboard(instance, pid, arguments):
   instance.put()
   return ["%d %s" % (v, k) for k, v in instance.get_scoreboard().items()]
   
-def get_public_instances(instance, pid, arguments):
-  include_players = False  
+def get_public_instances(model, pid, arguments):
+  game = model
+  include_players = False
+
+  if model.parent():
+    game = model.parent()
 
   if len(arguments) > 0:
     include_players = utils.get_boolean(arguments[0])  
@@ -78,7 +82,7 @@ def get_public_instances(instance, pid, arguments):
   if len(arguments) == 2:
     count = int(arguments[1])
 
-  public_instances = instance.parent().get_public_instances_query().fetch(count)
+  public_instances = game.get_public_instances_query().fetch(count)
 
   if include_players:
     return [get_public_instance_string(i) for i in public_instances]
