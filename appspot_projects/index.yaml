@@ -41,6 +41,21 @@ indexes:
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
 
+- kind: GameInstance
+  ancestor: yes
+  properties:
+  - name: full
+  - name: invited
+  - name: date
+    direction: desc
+
+- kind: GameInstance
+  ancestor: yes
+  properties:
+  - name: players
+  - name: date
+    direction: desc
+
 - kind: Message
   ancestor: yes
   properties:

@@ -1,3 +1,19 @@
+'''
+Copyright 2009 Google Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+'''
+
 import re
 from google.appengine.ext import db
 from google.appengine.ext.db import Key
@@ -5,11 +21,18 @@ from google.appengine.ext.db import Key
 EMAIL_ADDRESS_REGEX = ("([0-9a-zA-Z]+[-._+&amp;])*[0-9a-zA-Z]+@"
                        "([-0-9a-zA-Z]+[.])+[a-zA-Z]{2,6}")
 
-def get_instance_model(gid, iid):
-  game_key = Key.from_path('Game', gid, 'GameInstance', iid)
+def get_game_model(gid):
+  game_key = Key.from_path('Game', gid)
   model = db.get(game_key)
   if model is None:
-    raise ValueError('Instance %s not found.' % iid)
+    raise ValueError('Game %s was not found.' % gid)
+  return model
+
+def get_instance_model(gid, iid):
+  instance_key = Key.from_path('Game', gid, 'GameInstance', iid)
+  model = db.get(instance_key)
+  if model is None:
+    raise ValueError('Instance %s was not found.' % iid)
   return model
 
 def check_playerid(pid):
@@ -27,7 +50,7 @@ def check_gameid(gid):
 
 def check_instanceid(iid):
   if iid == "" or iid is None:
-    raise ValueError('No instance specified for request.' % iid)
+    raise ValueError('No instance specified for request.')
   return iid
 
 def get_boolean(value):

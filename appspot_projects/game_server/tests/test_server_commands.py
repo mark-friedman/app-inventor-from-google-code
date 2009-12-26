@@ -77,7 +77,7 @@ def test_get_public_player_counts():
   instance = test_utils.get_instance_model(iid)
   players = len(instance.players)
 
-  response = test_utils.post_server_command(iid, 'sys_get_public_instances', [False])
+  response = test_utils.post_server_command('', 'sys_get_public_instances', [False])
   assert iid in response['cont']['mcont']
 
   test_utils.post_server_command(iid, 'sys_set_max_players', [players])
