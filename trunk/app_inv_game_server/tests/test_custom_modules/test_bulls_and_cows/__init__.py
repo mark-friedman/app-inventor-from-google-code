@@ -16,17 +16,3 @@
 
 __authors__ = ['"Bill Magnuson" <billmag@mit.edu>']
 
-import google.appengine.api
-import unittest
-from game_server import utils
-
-players = ['test@test.com', '"Bob Jones" <test2@test.com>', '<test3@test.com>']
-
-def test_check_playerid():
-  assert utils.check_playerid(players[0]) == 'test@test.com'
-  assert utils.check_playerid(players[1]) == 'test2@test.com'
-  assert utils.check_playerid(players[2]) == 'test3@test.com'
-
-def test_get_game_that_does_not_exist():
-  model = utils.get_game_model('test')
-  assert not model

@@ -256,9 +256,12 @@ def get_instance_lists(gid, iid, pid):
   """
   utils.check_gameid(gid)
   player = utils.check_playerid(pid)
-  game = utils.get_game_model(gid)
-  model = game
-  if iid:
+  model = game = utils.get_game_model(gid)
+  if game is None:
+    game = Game(key_name = gid, instance_count = 0)
+    game.put()
+    model = game
+  elif iid:
     instance = utils.get_instance_model(gid,iid)
     if instance:
       model = instance
@@ -315,6 +318,9 @@ def join_instance(gid, iid, pid):
   If the player is already in the game instance this will succeed
   without modifying the instance.
 
+  If the specified game instance doesn't exist, it will be created
+  as in new_instance with the specified instance id.
+
   Returns:
     A tuple of the game instance and the instance list dictionary
     for this player (see get_instance_lists_as_dictionary).
@@ -328,24 +334,15 @@ def join_instance(gid, iid, pid):
   utils.check_instanceid(iid)
   player = utils.check_playerid(pid)
   instance = utils.get_instance_model(gid, iid)
+  if instance is None:
+    return new_instance(gid, iid, pid)
   game = instance.parent()
   instance_lists = get_instances_lists_as_dictionary(game, player)
-
-  if player not in instance.players:
-    if player not in instance.invited and not instance.public:
-      raise ValueError("%s not invited to instance %s."
-                       % (player, instance.key().name()))
-    if instance.full:
-      raise ValueError("%s could not join: instance %s is full"
-                       % (player, instance.key().name()))
-    if player in instance.invited:
-      instance_lists["invited"].remove(instance.key().name())
-      instance.invited.remove(player)
-
-    instance_lists["joined"].append(instance.key().name())
-    instance.players.append(player)
-    instance.put()
-
+  instance.add_player(player)
+  instance.put()
+  if iid in instance_lists['invited']:
+    instance_lists['invited'].remove(instance.key().name())
+  instance_lists["joined"].append(instance.key().name())
   return instance, instance_lists
 
 def get_messages(gid, iid, message_type, recipient, count, time):
@@ -408,12 +405,12 @@ def new_instance(gid, iid_prefix, pid):
   game = Game.get_by_key_name(gid)
   if game is None:
     game = Game(key_name = gid, instance_count = 0)
-  game.instance_count += 1
-  game.put()
 
   if not iid_prefix:
     iid_prefix = player + 'instance'
   instance = game.get_new_instance(iid_prefix, player)
+  instance.put()
+  game.put()
   instance_lists = get_instances_lists_as_dictionary(game, player)
   instance_lists['joined'].append(instance.key().name())
   return instance, instance_lists
@@ -482,7 +479,7 @@ def server_command(gid, iid, pid, command, arguments):
 
   If the gid and iid specify a valid game instance model it will be
   passed to the server command. In the case that the iid is empty or refers
-  to a game instance that doesn't exist a game model will be used. Most
+  to a game instance that doesn't exist, a game model will be used. Most
   commands will fail if passed a game model instead of a game instance, but
   some are indifferent to the model passed to them.
 
@@ -507,11 +504,12 @@ def server_command(gid, iid, pid, command, arguments):
   utils.check_gameid(gid)
   player = utils.check_playerid(pid)
   model = None
-  try:
-    utils.check_instanceid(iid)
+  if iid:
     model = utils.get_instance_model(gid, iid)
-  except ValueError:
+  if model is None:
     model = utils.get_game_model(gid)
+    if model is None:
+      model = Game(key_name = gid, instance_count = 0)
 
   arguments = simplejson.loads(arguments)
   reply = ''

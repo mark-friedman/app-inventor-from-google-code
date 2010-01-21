@@ -26,7 +26,15 @@ are not being used.
 __authors__ = ['"Bill Magnuson" <billmag@mit.edu>']
 
 from custom_modules.androids_to_androids import ata_commands
+from custom_modules.bulls_and_cows import bac_commands
 
-custom_command_dict = {'ata_new_game' : ata_commands.new_game_command,
-                       'ata_submit_card' : ata_commands.submit_card_command,
-                       'ata_end_turn' : ata_commands.end_turn_command}
+custom_command_dict = {
+    # Androids to Androids
+    'ata_new_game' : ata_commands.new_game_command,
+    'ata_submit_card' : ata_commands.submit_card_command,
+    'ata_end_turn' : ata_commands.end_turn_command,
+
+    # Bulls and Cows
+    'bac_new_game' : bac_commands.new_game_command,
+    'bac_guess' : bac_commands.guess_command
+    }
