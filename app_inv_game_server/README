@@ -46,10 +46,13 @@ COPYING  README  app.yaml  custom_modules  game_server  index.yaml
 main.py  tests
 
 ./custom_modules/:
-__init__.py  androids_to_androids  commands.py
+__init__.py  androids_to_androids  bulls_and_cows  commands.py
 
 ./custom_modules/androids_to_androids/:
 __init__.py  ata_commands.py  decks.py
+
+./custom_modules/bulls_and_cows/:
+__init__.py  bac_commands.py
 
 ./game_server/:
 __init__.py  autoretry_datastore.py  extensions  iso8601.py  models  
@@ -65,10 +68,13 @@ __init__.py  game.py  game_instance.py	message.py
 __init__.py  test_custom_modules  test_game_server  test_utils.py
 
 ./tests/test_custom_modules/:
-__init__.py  test_androids_to_androids
+__init__.py  test_androids_to_androids test_bulls_and_cows
 
 ./tests/test_custom_modules/test_androids_to_androids/:
 __init__.py  test_ata_commands.py
+
+./tests/test_custom_modules/test_bulls_and_cows/:
+__init__.py  test_bac_commands.py
 
 ./tests/test_game_server/:
 __init__.py  test_extensions  test_models  test_server.py  

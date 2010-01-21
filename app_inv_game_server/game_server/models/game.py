@@ -30,16 +30,20 @@ class Game(db.Model):
 
   Attributes:
     instance_count: The number of instances that have been made with this
-      Game as their parent. Doesn't decrement if they are deleted.
+      Game as their parent. This number is managed manually.
   """
   instance_count = db.IntegerProperty(default=0)
 
   def get_new_instance(self, prefix, player):
-    """ Create a new instance with prefix as the beginning of the instace id.
+    """ Create a new GameInstance and return its model.
 
     Args:
       prefix: A string used as the beginning of the instance id.
       player: The email address of the player.
+
+    When this returns, neither this Game model or the new GameInstance
+    have been put() in the database. If the GameInstance should persist,
+    both models need to be put().
 
     Returns:
       A GameInstance object with a unique instance id beginning with prefix
@@ -47,13 +51,13 @@ class Game(db.Model):
     """
     prefix = prefix.replace(' ', '')
     new_iid = prefix
+    self.instance_count += 1
     new_index = self.instance_count
     while GameInstance.get_by_key_name(new_iid, parent=self) is not None:
       new_index += 1
       new_iid = prefix + str(new_index)
     instance = GameInstance(parent = self, key_name = new_iid,
                           players = [player], leader = player)
-    instance.put()
     return instance
 
   def get_public_instances_query(self):

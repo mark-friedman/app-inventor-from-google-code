@@ -16,14 +16,11 @@ Tests the Androids to Androids custom module.
 
 __authors__ = ['"Bill Magnuson" <billmag@mit.edu>']
 
-import google.appengine.api
-import unittest
 from game_server import utils
 from game_server.extensions import scoreboard
 from game_server.extensions import card_game
 from custom_modules.androids_to_androids import decks
 from tests import test_utils
-from webtest import TestApp
 
 gid = test_utils.gid
 firstpid = test_utils.firstpid

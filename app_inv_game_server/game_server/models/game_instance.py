@@ -220,3 +220,30 @@ class GameInstance(db.Expando):
     if player == self.leader:
       return player
     raise ValueError("You must be the leader to perform this operation.")
+
+  def add_player(self, player):
+    """ Add a new player to this instance.
+
+    Args:
+      player: The email address of the player to add.
+
+    A player can join a game instance if it is not full and either the
+    instance is public or the player has been invited.  If the player
+    is already in the game instance this will succeed without
+    modifying the instance.
+
+    Raises:
+      ValueError if the player is not already in the game and is unable
+      to join.
+    """
+    if player not in self.players:
+      if player not in self.invited and not self.public:
+        raise ValueError("%s not invited to instance %s."
+                         % (player, self.key().name()))
+      if self.full:
+        raise ValueError("%s could not join: instance %s is full"
+                         % (player, self.key().name()))
+      if player in self.invited:
+        self.invited.remove(player)
+      self.players.append(player)
+      self.set_full()

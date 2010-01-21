@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-
+Tests for the server post commands.
 """
 
 __authors__ = ['"Bill Magnuson" <billmag@mit.edu>']
@@ -28,6 +28,35 @@ def setUp():
 
 def tearDown():
   test_utils.clear_data_store()
+
+def test_get_instance_lists_with_no_game():
+  test_utils.clear_data_store()
+  assert not test_utils.get_game_model()
+  response = app.post('/getinstancelists',
+                      {'gid': gid,
+                       'iid' : '',
+                       'pid' : firstpid}).json
+  assert response['gid'] == gid
+  assert response['iid'] == ''
+  assert response['response']['invited'] == []
+  assert response['response']['joined'] == []
+  assert test_utils.get_game_model()
+
+def test_join_instance_makes_new_instance():
+  test_utils.clear_data_store()
+  iid = 'new_iid'
+  assert not test_utils.get_game_model()
+  assert not test_utils.get_instance_model(iid)
+  response = app.post('/joininstance',
+                      {'gid': gid,
+                       'iid' : iid,
+                       'pid' : firstpid}).json
+  assert response['iid'] == iid
+  assert response['gid'] == gid
+  assert response['response']['invited'] == []
+  assert response['response']['joined'] == [iid]
+  assert test_utils.get_game_model()
+  assert test_utils.get_instance_model(iid)
 
 def test_new_instance():
   test_iid = 'iid_prefix'

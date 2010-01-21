@@ -31,15 +31,11 @@ def get_game_model(gid):
     gid: The game id of the Game.
 
   Returns:
-    The database model for the specified id.
-
-  Raises:
-    ValueError if the specified Game doesn't exist in the datastore.
+    The database model for the specified id or None if no such model
+    exists.
   """
   game_key = Key.from_path('Game', gid)
   model = db.get(game_key)
-  if model is None:
-    raise ValueError('Game %s was not found.' % gid)
   return model
 
 def get_instance_model(gid, iid):
@@ -50,15 +46,11 @@ def get_instance_model(gid, iid):
     iid: The instance id of the GameInstance.
 
   Returns:
-    The database model for the specified ids.
-
-  Raises:
-    ValueError if the specified GameInstance doesn't exist in the datastore.
+    The database model for the specified ids or None if the GameInstance
+    doesn't exist..
   """
   instance_key = Key.from_path('Game', gid, 'GameInstance', iid)
   model = db.get(instance_key)
-  if model is None:
-    raise ValueError('Instance %s was not found.' % iid)
   return model
 
 def check_playerid(pid, instance = None):

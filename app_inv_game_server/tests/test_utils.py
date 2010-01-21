@@ -23,6 +23,7 @@ from google.appengine.ext import db
 from google.appengine.ext.db import Key
 from game_server.server import application
 from game_server.models.game_instance import GameInstance
+from game_server.models.game import Game
 from custom_modules.commands import custom_command_dict
 from webtest import TestApp
 
@@ -112,3 +113,15 @@ def get_instance_model(instanceid, gameid = gid):
   game_key = Key.from_path('Game', gameid, 'GameInstance', instanceid)
   model = GameInstance.get(game_key)
   return model
+
+def get_game_model(gameid = gid):
+  """ Return a Game model for the given game id.
+
+  Args:
+    gameid: The game id of the Game.
+
+  Returns:
+    The database model for the specified id or None if no such model
+    exists.
+  """
+  return Game.get(Key.from_path('Game', gameid))
