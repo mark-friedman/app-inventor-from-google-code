@@ -185,24 +185,6 @@ def test_delete_instance_and_messages():
   messages = Message.all(keys_only = True).ancestor(instance.key()).fetch(1000)
   assert len(messages) == 0
 
-def test_leave_instance_change_leader():
-  test_iid = test_utils.make_instance()
-  player = 'new_leader@gmail.com'
-  test_utils.add_player(test_iid, player)
-  state = test_utils.get_invited_and_joined_instances(test_iid, firstpid)
-  assert test_iid in state['joined']
-  test_utils.post_server_command(test_iid, 'sys_leave_instance', [])
-  state = test_utils.get_invited_and_joined_instances(test_iid, firstpid)
-  assert test_iid not in state['joined']
-  instance = test_utils.get_instance_model(test_iid)
-  assert instance.players == [player]
-  assert instance.leader == player
-
-def test_leave_instance_deletes_empty_game():
-  test_iid = test_utils.make_instance()
-  test_utils.post_server_command(test_iid, 'sys_leave_instance', [])
-  assert not test_utils.get_instance_model(test_iid)
-
 def test_decline_invite():
   test_iid = test_utils.make_instance()
   invitee = 'invitee@test.com'

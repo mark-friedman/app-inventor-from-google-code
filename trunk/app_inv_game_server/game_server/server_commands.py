@@ -42,9 +42,7 @@ from django.utils import simplejson
 from extensions import scoreboard
 from extensions import card_game
 
-
-EMAIL_SENDER = "AppInventorGameServer <aigameserver@gmail.com>"
-EMAIL_SENDER_ADDRESS = "aigameserver@gmail.com"
+EMAIL_SENDER = ""
 
 def send_email_command(model, player, arguments):
   """ Send an email using App Engine's email server.
@@ -52,21 +50,26 @@ def send_email_command(model, player, arguments):
   Args:
     instance: Not used, can be any value.
     player: The player requesting that the email be sent.
-    arguments: A two item list with the subject of the email as the first
-      item and the body of the email as the second.
+    arguments: A two item list with the subject of the email as the
+      first item and the body of the email as the second.
+
+  EMAIL_SENDER must be defined above and be a listed developer
+  of your AppEngine application for this to work successfully.
 
   Returns:
-    True if the email sends succesfully.
+    True if the email sends succesfully, False otherwise.
   """
-  message_recipient = arguments[0]
-  message_content = arguments[1]
-  mail.send_mail(sender=EMAIL_SENDER,
-                 to=message_recipient,
-                 subject=message_content[0],
-                 body=message_content[1] +
-                 '\nMessage sent from AppInventorGameServer by ' +
-                 player + '.')
-  return True
+  if email_sender:
+    message_recipient = arguments[0]
+    message_content = arguments[1]
+    mail.send_mail(sender=EMAIL_SENDER,
+                   to=message_recipient,
+                   subject=message_content[0],
+                   body=message_content[1] +
+                   '\nMessage sent from AppInventorGameServer by ' +
+                   player + '.')
+    return True
+  return False
 
 def set_public_command(instance, player, arguments):
   """ Set the public membership field for an instance.
@@ -86,7 +89,8 @@ def set_public_command(instance, player, arguments):
     The new value of public for the instance.
 
   Raises:
-    ValueError if the requesting player is not the leader of the instance.
+    ValueError if the requesting player is not the leader of the
+      instance.
     ValueError if the argument is unable to be parsed into a boolean.
   """
   instance.check_leader(player)
@@ -114,7 +118,8 @@ def set_max_players_command(instance, player, arguments):
     The new value of max_players for the instance.
 
   Raises:
-    ValueError if the requesting player is not the leader of the instance.
+    ValueError if the requesting player is not the leader of the
+      instance.
     ValueError if the argument is unable to be parsed into an integer.
   """
   instance.check_leader(player)
@@ -126,25 +131,23 @@ def get_public_instances_command(model, player, arguments = None):
   """ Return a list of public instances of the specified game.
 
   Args:
-    model: Either a Game or GameInstance database model. If model
-      is a GameInstance, this will return the public instances of
-      its parent Game.
+    model: Either a Game or GameInstance database model. If model is a
+      GameInstance, this will return the public instances of its
+      parent Game.
     player: Not used. Value can be anything.
     arguments: Not used, can be any value.
 
   Returns:
     A list of all public instances in this game that have less players
     than their maximum (i.e. can be joined). Instances are sorted with
-    the newest ones first. Each entry in the list of instances is itself
-    a three item list with the instance id as the first item, the number
-    of players currently in the game as the second item and the maximum
-    number of players (if any) as the third item. If no maximum number
-    of players is set for the game instance the third item will be set
-    to zero.
+    the newest ones first. Each entry in the list of instances is
+    itself a three item list with the instance id as the first item,
+    the number of players currently in the game as the second item and
+    the maximum number of players (if any) as the third item. If no
+    maximum number of players is set for the game instance the third
+    item will be set to zero.
   """
   game = utils.get_game(model)
-  include_players = False
-
   public_instances = game.get_public_instances_query().fetch(1000)
   return [[i.key().name(), len(i.players), i.max_players]
           for i in public_instances]
@@ -158,8 +161,8 @@ def delete_instance_command(instance, player, arguments = None):
       be the current leader of the instance.
     arguments: Not used, can be any value.
 
-  Makes a good faith effort to delete the messages, but deleting
-  large numbers of database entries is currently very buggy in
+  Makes a good faith effort to delete the messages, but deleting large
+  numbers of database entries is currently very buggy in
   AppEngine. This will hopefully get better over time as AppEngine
   advances. See the method delete_messages in models/game_instance.py
   for more information.
@@ -185,34 +188,6 @@ def delete_instance_command(instance, player, arguments = None):
                   traceback.format_exc())
   db.delete(instance)
   instance.do_not_put = True
-  return True
-
-def leave_instance_command(instance, player, arguments = None):
-  """ Remove a player from an instance.
-
-  Args:
-    instance: The instance to remove player from.
-    player: The player wishing to leave the instance.
-    arguments: Not used, can be any value.
-
-  If the player that leaves the instance is the leader, the first
-  player on the players lists becomes the leader. If there are
-  no players left in the instance after player leaves, the instance
-  is deleted.
-
-  Returns:
-    True if the player is succesfully removed.
-
-  Raises:
-    ValueError if the player is not currently in the instance.
-  """
-  instance.check_player(player)
-  instance.players.remove(player)
-  if len(instance.players) == 0:
-    delete_instance_command(instance, player)
-  else:
-    instance.leader = instance.players[0]
-
   return True
 
 def decline_invite_command(instance, player, arguments = None):
@@ -241,7 +216,6 @@ command_dict = {
   'sys_set_max_players' : set_max_players_command,
   'sys_get_public_instances' : get_public_instances_command,
   'sys_delete_instance' : delete_instance_command,
-  'sys_leave_instance' : leave_instance_command,
   'sys_decline_invite' : decline_invite_command,
 
   # Scoreboard commands.

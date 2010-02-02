@@ -30,3 +30,18 @@ def test_check_playerid():
 def test_get_game_that_does_not_exist():
   model = utils.get_game_model('test')
   assert not model
+
+def test_get_boolean():
+  assert utils.get_boolean('tRuE') == True
+  assert utils.get_boolean('TRUE') == True
+  assert utils.get_boolean('true') == True
+  assert utils.get_boolean('fAlSe') == False
+  assert utils.get_boolean('false') == False
+  assert utils.get_boolean('FALSE') == False
+  try:
+    utils.get_boolean('true that')
+    assert False
+  except ValueError:
+    pass
+  assert utils.get_boolean(True) == True
+  assert utils.get_boolean(False) == False

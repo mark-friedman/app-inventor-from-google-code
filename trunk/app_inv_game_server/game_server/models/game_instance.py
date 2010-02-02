@@ -38,12 +38,14 @@ class GameInstance(db.Expando):
     invited: A list of email addresses of invited players.
     leader: The player that is currently the leader of the instance.
     date: The date of creation, automatically set upon instantiation.
-    public: A bool that determines whether a player must first be invited
-      before they can join this instance.
+    public: A bool that determines whether a player must first be
+      invited before they can join this instance.
     full: A boolean indicating whether or not the game has reached
-      its maximum membership. Automatically set when the GameInstance is put.
-    max_players: An integer for the maximum number of players allowed in this
-      instance or 0 if there is no maximum.
+      its maximum membership. Automatically set when the GameInstance
+      is put.
+    max_players: An integer for the maximum number of players allowed
+      in this instance or 0 if there is no maximum.
+
   """
   players = db.StringListProperty(required=True)
   invited = db.StringListProperty(default=[])
@@ -91,75 +93,92 @@ class GameInstance(db.Expando):
     Args:
       sender: A string describing the creator of the message.
       msg_type: A string that acts as a key for the message.
-      recipient: The intended recipient of this message. The recipient should
-        either be the empty string or an email address. Messages sent with the
-        empty string as their recipient can be fetched by any player.
-      content: A python list or dictionary representing the content of this
-        message. Converted to a json string for storage.
+      recipient: The intended recipient of this message. The
+        recipient should either be the empty string or an email
+        address. Messages sent with the empty string as their
+        recipient can be fetched by any player.
+      content: A python list or dictionary representing the content
+        of this message. Converted to a json string for storage.
 
     Returns:
-      A new Message model with the specified attributes. This model has not
-      yet been put in the database.
+      A new Message model with the specified attributes. This model
+      has not yet been put in the database.
     """
     return Message(parent = self, sender = sender, msg_type = msg_type,
                    recipient = recipient, content = simplejson.dumps(content))
 
-  def get_messages(self, time=datetime.min, count=1000,
+  def get_messages(self, time = datetime.min, count = 1000,
                    message_type='', recipient=''):
     """ Return a list of message dictionaries using query_messages.
 
     Args (optional):
-      time: (default: datetime.min) All messages retrieved must have been
-        created after this time..
-      count: (default 1000) The maximum number of messages to retrieve.
-      message_type: (default '') The message type to retrieve. If left as
-        None or the empty string then all messages matching other criteria
-        will be returned.
-      recipient: (default '') The recipient of the messages to retrieve.
-        All messages sent with a recipient of the empty string will also
-        be retrieved.
+      time: (default: datetime.min) All messages retrieved must have
+        been created after this time..
+      count: (default 1000) The maximum number of messages to
+        retrieve.
+      message_type: (default '') The message type to retrieve. If
+        left as None or the empty string then all messages matching
+        other criteria will be returned.
+      recipient: (default '') The recipient of the messages to
+        retrieve.  All messages sent with a recipient of the empty
+        string will also be retrieved.
 
     Returns:
-      The dictionary representation of all messages matching the above
-      criteria that were created with this instance as the parent. The
-      newest 'count' messages (that are newer than time) are retrieved
-      and then returned in order such that the first message in the
-      returned list is the oldest.
+      The dictionary representation of all messages matching the
+      above criteria that were created with this instance as the
+      parent. The newest 'count' messages (that are newer than time)
+      are retrieved and then returned in order such that the first
+      message in the returned list is the oldest.
 
-      Note that the first message returned is not necessarily the oldest
-      one that is newer than time. This can occur if the number of matching
-      messages is greater than 'count' since the 'count' newest are selected
-      before their order is reversed.
-
+      Note that the first message returned is not necessarily the
+      oldest one that is newer than time. This can occur if the
+      number of matching messages is greater than 'count' since the
+      'count' newest are selected before their order is reversed.
     """
     return [message.to_dictionary() for message in
-            reversed(self.query_messages(time, count, message_type,
-                                         recipient))]
+            self.get_messages_query(message_type, recipient,
+                                    time = time).fetch(count)[::-1]]
 
-  def query_messages(self, time, count, message_type, recipient,
-                     keys_only = False):
-    """ Return messages from this instance.
+  def get_messages_query(self, message_type, recipient,
+                         time = datetime.min, sender = None,
+                         keys_only = False):
+    """ Return a message query from this instance.
 
     Args:
-      time: All messages retrieved must have been created after this time..
-      count: The maximum number of messages to retrieve.
-      message_type: The message type to retrieve. If left as None or the empty
-        string then all messages matching other criteria will be returned.
-      recipient: The recipient of the messages to retrieve. All messages sent
-        with a recipient of the empty string will also be retrieved.
+      message_type: The message type to retrieve. If left as None or
+        the empty string then all messages matching other criteria
+        will be returned.
+      recipient: The recipient of the messages to retrieve. All
+        messages sent with a recipient of the empty string will also
+        be retrieved.
+      time: All messages retrieved must have been created after this
+        time.
+      sender: The sender of the message.
+      keys_only: If keys_only is set to true, this will only search
+        for messages that have recipient = recipient. Thus, it will
+        only include messages sent with no recipient if recipient
+        is set to ''.
 
     Returns:
-      A list of Message database models that match the criteria given in args
-      and were created with this instance as their parent.
+      A query object that can be fetched or further modified.
     """
     query = Message.all(keys_only = keys_only)
     query.ancestor(self.key())
     query.filter('date >', time)
     if message_type is not None and message_type != '':
       query.filter('msg_type =', message_type)
-    query.filter("recipient IN", [recipient, ''])
+    if sender:
+      query.filter('sender =', sender)
+    # Avoid doing two queries when we don't need to.
+    if recipient == '':
+      query.filter('recipient =', '')
+    else:
+      if keys_only:
+        query.filter('recipient =', recipient)
+      else:
+        query.filter("recipient IN", [recipient, ''])
     query.order('-date')
-    return query.fetch(count)
+    return query
 
   def delete_messages(self, mtype = None):
     """ Delete messages of a specified kind.
@@ -169,7 +188,7 @@ class GameInstance(db.Expando):
 
     Due to timeout issues with App Engine, this method will currently
     only succeed when running on App Engine if the number of messages
-    being deleted is relatively small (~200). It will attempt to
+    being deleted is relatively small (~hundreds). It will attempt to
     delete up to 1000. The timeout retry wrapper (see
     game_server/autoretry_datastore.py) and using keys only search
     drastically increases the chances of success, but this method is
@@ -233,8 +252,8 @@ class GameInstance(db.Expando):
     modifying the instance.
 
     Raises:
-      ValueError if the player is not already in the game and is unable
-      to join.
+      ValueError if the player is not already in the game and is
+      unable to join.
     """
     if player not in self.players:
       if player not in self.invited and not self.public:

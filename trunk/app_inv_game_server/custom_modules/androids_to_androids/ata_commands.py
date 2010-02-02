@@ -37,17 +37,17 @@ winner as the new leader. Play continues in this way until one of the
 players reaches a predetermined winning score and is declared the
 winner.
 
-Each command returns information that is immediately useful to the player
-who requested the command. In addition, any changes to their hand or
-the set of cards players have submitted will be sent to them via message
-so that they can easily recover state if they lose their active session
-in the game.
+Each command returns information that is immediately useful to the
+player who requested the command. In addition, any changes to their
+hand or the set of cards players have submitted will be sent to them
+via message so that they can easily recover state if they lose their
+active session in the game.
 
 Submitting cards and ending turns both require that the player submit
-the round number that they intend for that action to apply to. If that
-number does not match the current round the action will be ignored and
-the command will return information to allow that player to get back up
-to date with the game.
+the round number that they intend for that action to apply to. If
+that number does not match the current round the action will be
+ignored and the command will return information to allow that player
+to get back up to date with the game.
 """
 
 __authors__ = ['"Bill Magnuson" <billmag@mit.edu>']
@@ -73,36 +73,38 @@ def new_game_command(instance, player, arguments = None):
   Args:
     instance: The GameInstance database model for this operation.
     player: The player starting the game. Must be the current leader
-      of instance.
+      of the instance instance.
     arguments: Not used, can be any value.
 
   Closes the game to new players, deals a new hand to each player and
-  selects a new characteristic card to begin round 1. Sends a new game
-  message to all players with the starting card and the empty scoreboard.
+  selects a new characteristic card to begin round 1. Sends a new
+  game message to all players with the starting card and the empty
+  scoreboard.
 
-  Each player will also receive a message of type crd_hand that contains
-  all of the cards dealt to them.
+  Each player will also receive a message of type crd_hand that
+  contains all of the cards dealt to them.
 
   Returns:
     A three item list consisting of the new characteristic card for
-    this turn, the current (empty) scoreboard, and the player's current
-    hand.
+    this turn, the current (empty) scoreboard, and the requesting
+    player's current hand.
 
   Raises:
-    ValueError if an Androids to Androids game is already in progress,
-    if player is not the current leader of the game or if there are not
-    enough players in the game to begin.
+    ValueError if an Androids to Androids game is already in
+    progress, if player is not the current leader of the game or if
+    there are not enough players in the game to begin.
   """
   player = instance.check_leader(player)
+  instance.public = False
 
   if 'ata_round' in instance.dynamic_properties():
-    raise ValueError("An Androids to Androids game is already in progress.")
+    raise ValueError("This game is already in progress. " +
+                     "Please refresh the game state.")
 
   if len(instance.players) < min_players:
     raise ValueError("Androids to Androids requires at least %d players."
                      % min_players)
 
-  instance.public = False
   instance.max_players = len(instance.players)
   try:
     card_game.set_deck(instance, decks.noun_cards)
@@ -112,6 +114,7 @@ def new_game_command(instance, player, arguments = None):
   hands = card_game.deal_cards(instance, hand_size, True, False,
                                instance.players)
 
+  instance.starting_players = instance.players
   instance.ata_round = 0
   setup_new_round(instance)
   board = scoreboard.clear_scoreboard_command(instance, player)
@@ -127,87 +130,106 @@ def submit_card_command(instance, player, arguments):
     instance: The GameInstance database model for this operation.
     player: The player submitting the card. Cannot be the leader.
     arguments: A two item list consisting of the round to submit this
-      card to and the card itself.
+      card for and the card itself.
+
+  If the submission is for the wrong round, a four item list with an
+  error string as its first element will be returned.  The remaining
+  elements are the player's hand, the current round and the current
+  characteristic card to respond to. No other action will be taken.
 
   Removes the indicated card from the player's hand and adds it
-  to this rounds submissions. The current submissions are sent via
+  to this round's submissions. The current submissions are sent via
   message to all players.
 
-  Player's hand will be dealt another card after removing the submitted
-  one. A message will be sent to player with the contents of the hand
-  and the new hand will be included in the return value of this command.
+  The requesting player's hand will be dealt another card after
+  removing the submitted one. The updated hand will be sent to the
+  requesting player in a message and be included in the return value
+  of this command.
 
   Returns:
     If the submission is for the correct round, returns a three item
-    list consisting of the current round, the players new hand and
-    a list of the submissions made so far by other players in this
-    round.
-
-    If the submission is for the wrong round, a three item list with
-    the string 'wrong_round' as its first element will be returned.
-    The next two elements are the current round and the current
-    characteristic card to respond to.
+    list consisting of the current round number, a list of the
+    submissions made so far by other players in this round and the
+    player's new hand.
 
   Raises:
     ValueError if player is the leader. The leader is not allowed to
     submit cards.
   """
   if int(arguments[0]) != instance.ata_round:
-    return ['wrong_round', instance.ata_round, instance.ata_char_card]
+    hand = card_game.get_player_hand(instance, player)
+    return ['You tried to submit a card for the wrong round. ' +
+            'Please try again.', hand, instance.ata_round,
+            instance.ata_char_card]
+
+  missing_player = check_players(instance)
+  if missing_player:
+    return missing_player
 
   if player == instance.leader:
     raise ValueError("The leader may not submit a card.")
 
   submission = arguments[1]
-  submissions = set_submission(instance, player, submission).keys()
+  submissions = set_submission(instance, player, submission).values()
   instance.create_message(player, 'ata_submissions', '',
-                          [instance.ata_round, submissions]).put()
+                          [instance.ata_round, submissions, submission]).put()
 
-  card_game.discard(instance, player, [submission])
+  card_game.discard(instance, player, [submission], False)
   hand = card_game.draw_cards(instance, player, 1)
-  return [instance.ata_round, hand, submissions]
+  return [instance.ata_round, submissions, hand]
 
 def end_turn_command(instance, player, arguments):
   """ End the current turn and start a new one.
 
   Args:
     instance: The GameInstance database model for this operation.
-    player: The player submitting the card. Must be the current leader.
+    player: The player submitting the card. Must be the current
+    leader.
     arguments: A two item list consisting of the round number to end
       and the selected winning card.
 
-  Ends the current turn and adds 1 point to the score of the player
-  who submitted the winning card. If that player has then reached the
-  winning score, an 'ata_game_over' message will be sent to all players.
-  The game over message content will be a four item list consisting of
-  the current round number, the winner's email, the winning card and
-  the final scoreboard.
+  If the command is for the wrong round, a four item list with an
+  error string as its first element will be returned.  The remaining
+  elements are the player's hand, the current round and the current
+  characteristic card to respond to. No other action will be taken.
 
-  Otherwise, sends an 'ata_new_round' message to all players. The new round
-  message contents will be a five item list with the round number, the
-  new characteristic card, the previous round winner, the winning card
-  and the current scoreboard.
+  Ends the current turn and adds 1 point to the score of the player
+  who submitted the winning card. If that player has reached the
+  winning score, an 'ata_game_over' message will be sent to all
+  players.  The game over message content will be a three item list as
+  its contents. The list contains the final round number, the winning
+  card and the final scoreboard.
+
+  Otherwise, sends an 'ata_new_round' message to all players. The new
+  round message contents will be a five item list with the round
+  number, the new characteristic card, the previous round winner, the
+  winning card and the current scoreboard.
 
   Returns:
-    If the command is for the wrong round, a three item list with
-    the string 'wrong_round' as its first element will be returned.
-    The next two elements are the current round and the current
-    characteristic card to respond to.
-
-    Otherwise, returns the content of whichever message was sent to
-    all players as described above.
+    If the command was for the correct round, returns the content of
+    whichever message was sent to all players as described above.
   Raises:
     ValueError if player is not the leader.
     KeyError if no player has submitted the winning card.
   """
   if int(arguments[0]) != instance.ata_round:
-    return ['wrong_round', instance.ata_round, instance.ata_char_card]
+    hand = card_game.get_player_hand(instance, player)
+    return ['You tried to end a turn that has already ended. ' +
+            'Please try again.', hand, instance.ata_round,
+            instance.ata_char_card]
+
+  missing_player = check_players(instance)
+  if missing_player:
+    return missing_player
 
   instance.check_leader(player)
   card = arguments[1]
-  try:
-    winner = get_submissions_dict(instance)[card]
-  except KeyError:
+  winner = None
+  for player, submitted_card in get_submissions_dict(instance).items():
+    if card == submitted_card:
+      winner = player
+      break
+  if winner == None:
     raise KeyError('No player has submitted the card %s.' % card)
   board = scoreboard.add_to_score(instance, winner, 1)
 
@@ -218,14 +240,35 @@ def end_turn_command(instance, player, arguments):
 
   setup_new_round(instance)
   return_scoreboard = scoreboard.format_scoreboard_for_app_inventor(board)
-  content = [instance.ata_round, instance.ata_char_card, winner, card,
-             return_scoreboard]
+  content = [instance.ata_char_card, return_scoreboard,
+             instance.ata_round, winner, card]
   instance.create_message(instance.leader, 'ata_new_round', '', content).put()
   return content
 
 ###########
 # Helpers #
 ###########
+
+def check_players(instance):
+  """ Checks to see if any of the starting players have left.
+
+  Args:
+    instance: The GameInstance model for this operation.
+
+  If a player has left the game, they are invited back and
+  a ValueError is raised.
+
+  Raises:
+    ValueError if a player has left the game.
+  """
+  if len(instance.players) < len(instance.starting_players):
+    for starting_player in instance.starting_players:
+      if starting_player not in instance.players:
+        instance.invited.append(starting_player)
+        return ('%s left during your game. They have ' %
+                starting_player +
+                'been invited and must rejoin before continuing.')
+  return False
 
 def end_game(instance, winning_card):
   """ End the current game and inform all players of the winner.
@@ -234,24 +277,25 @@ def end_game(instance, winning_card):
     instance: The GameInstance database model for this operation.
     winning_card: The card chosen as the winner of the final round.
 
-  Sends an 'ata_game_over' message to all players with a four item
-  list as its contents. The list contains the final round number, the
-  winning player's email, the winning card and the final scoreboard.
+  Sends an 'ata_game_over' message from the winner to all players with
+  a three item list as its contents. The list contains the final round
+  number, the winning card and the final scoreboard.
 
   Deletes the ata_round, ata_char_card and ata_submissions properties
   from the GameInstance database model to allow for a new game to be
-  player in this same instance with the previous winner as the new leader.
+  player in this same instance with the previous winner as the new
+  leader.
 
   Returns:
     The content of the message sent to all players.
   """
-  content = [instance.ata_round, instance.leader, winning_card,
+  content = [instance.ata_round, winning_card,
              scoreboard.get_scoreboard_command(instance, instance.leader)]
   instance.create_message(instance.leader, 'ata_game_over', '', content).put()
-
   del instance.ata_round
   del instance.ata_char_card
   del instance.ata_submissions
+  instance.scoreboard = '{}'
   return content
 
 def setup_new_round(instance):
@@ -297,6 +341,8 @@ def set_submission(instance, player, card):
     submitted so far during this round.
   """
   submissions = get_submissions_dict(instance)
-  submissions[card] = player
+  if player in submissions:
+    raise ValueError('You have already submitted a card for this round.')
+  submissions[player] = card
   instance.ata_submissions = simplejson.dumps(submissions)
   return submissions

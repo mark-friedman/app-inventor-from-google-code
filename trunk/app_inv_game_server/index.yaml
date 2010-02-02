@@ -31,6 +31,25 @@ indexes:
   - name: date
     direction: desc
 
+# With sender, without type
+- kind: Message
+  ancestor: yes
+  properties:
+  - name: recipient
+  - name: sender
+  - name: date
+    direction: desc
+
+# With sender, type
+- kind: Message
+  ancestor: yes
+  properties:
+  - name: recipient
+  - name: msg_type
+  - name: sender
+  - name: date
+    direction: desc
+
 # For deleting, with type
 - kind: Message
   ancestor: yes

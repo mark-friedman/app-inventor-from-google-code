@@ -52,9 +52,7 @@ def get_score_command(instance, player, arguments):
       player to get the score of.
 
   Returns:
-    The complete scoreboard as a list of [score, email] lists for
-    each player in the game. The scoreboard is sorted with the highest
-    score first.
+    The score of the requested player.
 
   Raises:
     ValueError if the player in arguments is not in the game.
@@ -77,10 +75,9 @@ def set_score_command(instance, player, arguments):
 
   Raises:
     ValueError if the specified player is not in the instance.
-    ValueError if the specified score cannot parse correctly.
   """
   player = instance.check_player(arguments[0])
-  new_score = int(arguments[1])
+  new_score = arguments[1]
   board = set_score(instance, player, new_score)
   return format_scoreboard_for_app_inventor(board)
 
@@ -95,6 +92,9 @@ def add_to_score_command(instance, player, arguments):
       of the player who's score is to be set. The second item is the
       integer amount to change that player's score by. This value can
       be positive or negative.
+
+  In order for this operation to work correctly scores must be
+  represented in the scoreboard as single integer items.
 
   Returns:
     The complete scoreboard after adding to player's score.
@@ -114,7 +114,8 @@ def clear_scoreboard_command(instance, player, arguments = None):
   Args:
     instance: The GameInstance database model for this operation.
     player: The email address of the player requesting this action.
-      For this command, the player must be the current leader of the instance.
+      For this command, the player must be the current leader of the
+      instance.
     arguments: Not used, can be any value.
 
   Returns:
@@ -158,8 +159,8 @@ def set_score(instance, player, new_score):
     new_score: An integer to set their score to.
 
   Returns:
-    The scoreboard as a dictionary after setting a new value for player's
-    score.
+    The scoreboard as a dictionary after setting a new value for
+    player's score.
 
   Raises:
     ValueError if the player is not in the instance.
@@ -176,7 +177,11 @@ def add_to_score(instance, player, delta):
   Args:
     instance: The game instance to modify the scoreboard of.
     player: The player to change the score of.
-    delta: The integer amount to change player's score by (can be negative).
+    delta: The integer amount to change player's score by (can be
+    negative).
+
+    In order for this operation to work correctly scores must be
+    represented in the scoreboard as single integer items.
 
   Returns:
     The scoreboard as a dictionary after modifying player's score.
@@ -197,8 +202,9 @@ def get_scoreboard(instance):
     instance: The instance to get the scoreboard from.
 
   Returns:
-    A dictionary with a score entry for each player in the instance. If
-    no score was previously present, a score of zero is added.
+    A dictionary with a score entry for each player in the
+    instance. If no score was previously present, a value of
+    0 is entered.
   """
   board = None
   if 'scoreboard' not in instance.dynamic_properties():
