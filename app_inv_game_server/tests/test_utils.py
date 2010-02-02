@@ -34,7 +34,7 @@ players = [firstpid, '"Bob Jones" <test2@test.com>', '<test3@test.com>']
 
 def clear_data_store():
   apiproxy_stub_map.apiproxy = apiproxy_stub_map.APIProxyStubMap()
-  stub = datastore_file_stub.DatastoreFileStub('appinvgameserverdev',
+  stub = datastore_file_stub.DatastoreFileStub('appinvgameserver',
                                                '/dev/null', '/dev/null')
   apiproxy_stub_map.apiproxy.RegisterStub('datastore_v3', stub)
 

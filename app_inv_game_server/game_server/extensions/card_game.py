@@ -29,8 +29,8 @@ from game_server.models.message import Message
 from game_server.utils import get_boolean
 from google.appengine.ext import db
 
-default_deck = [[n, s] for n in range(14)[1:] for s in  ['Hearts','Spades',
-                                                         'Clubs','Diamonds']]
+default_deck = [[n, s] for n in range(14)[1:]
+                for s in  ['Hearts','Spades', 'Clubs','Diamonds']]
 
 ############################
 # Server command functions #
@@ -42,20 +42,22 @@ def set_deck_command(instance, player, arguments):
   Args:
     instance: The GameInstance database model for this operation.
     player: The email address of the player requesting the action.
-      For this command, the player must be the current leader of the instance.
+      For this command, the player must be the current leader of the
+      instance.
     arguments: A list of the cards to set the deck to.
 
-  Resets the deck used by card games from a standard 52 card deck
-  to the deck specified by the arguments list. A new deck can only be set
-  when no other card game methods have been invoked for a particular game
-  instance. The deck will remain the same throughout the life of the game
-  instance.
+  Resets the deck used by card games from a standard 52 card deck to
+  the deck specified by the arguments list. A new deck can only be set
+  when no other card game methods have been invoked for a particular
+  game instance. The deck will remain the same throughout the life of
+  the game instance.
 
   Returns:
     The number of cards in the new deck.
 
   Raises:
-    A ValueError if the requesting player is not the leader of the instance.
+    A ValueError if the requesting player is not the leader of the
+    instance.
   """
   instance.check_leader(player)
   return set_deck(instance, arguments)
@@ -71,36 +73,40 @@ def deal_cards_command(instance, player, arguments):
 
   The arguments list for this command consists of five items in order:
     1: cards_to_deal - The number of cards to deal as an integer.
-    2: shuffle_deck - A boolean controlling whether or not the deck should
-       be shuffled before the new hands are dealt. If the deck is shuffled,
-       all hands are also cleared regardless of the value of is_new_hand.
-    3: is_new_hand - A boolean indicating whether this is a new hand or not.
-       If it is a new hand, then all hands will be cleared before the new
-       cards are dealt. If the deck is shuffled before the cards are dealt then
-       the hands are cleared automatically and this has no effect.
-    4: ignore_empty_deck - Another boolean controlling whether to ignore an
-       empty deck or not. If it is true, then cards will be dealt until the
-       deck runs out and then this command will return successfully. If it
-       is false, an error will occur if the deck runs out of cards.
-    5: A list of player id's to be dealt to in the order to deal to them. Cards
-       will be dealt one at a time to players in the order that they appear in
-       this list.
+    2: shuffle_deck - A boolean controlling whether or not the deck
+       should be shuffled before the new hands are dealt. If the deck
+       is shuffled, all hands are also cleared regardless of the value
+       of is_new_hand.
+    3: is_new_hand - A boolean indicating whether this is a new hand
+       or not.  If it is a new hand, then all hands will be cleared
+       before the new cards are dealt. If the deck is shuffled before
+       the cards are dealt then the hands are cleared automatically
+       and this has no effect.
+    4: ignore_empty_deck - Another boolean controlling whether to
+       ignore an empty deck or not. If it is true, then cards will be
+       dealt until the deck runs out and then this command will return
+       successfully. If it is false, an error will occur if the deck
+       runs out of cards.
+    5: A list of player id's to be dealt to in the order to deal to
+       them. Cards will be dealt one at a time to players in the order
+       that they appear in this list.
 
-  Cards are dealt to players using the instance's deck according to the
-  arguments specified above. The cards are dealt in the order determined by
-  the last shuffling. Until a deck is re-shuffled, cards will be dealt as if
-  they were removed from the top of the deck and given to the player
-  permanently.
+  Cards are dealt to players using the instance's deck according to
+  the arguments specified above. The cards are dealt in the order
+  determined by the last shuffling. Until a deck is re-shuffled, cards
+  will be dealt as if they were removed from the top of the deck and
+  given to the player permanently.
 
   Returns:
     The hand of the requesting player after cards are dealt.
 
   Raises:
-    An IndexError if the deck runs out of cards and empty deck errors are
-    not being ignored.
-    A ValueError if any of the player id's in the list of players to deal
-    to are not in the game instance.
-    A ValueError if the requesting player is not the leader of the instance.
+    An IndexError if the deck runs out of cards and empty deck errors
+    are not being ignored.
+    A ValueError if any of the player id's in the list of players to
+    deal to are not in the game instance.
+    A ValueError if the requesting player is not the leader of the
+    instance.
   """
   instance.check_leader(player)
   cards_to_deal = int(arguments[0])
@@ -125,16 +131,17 @@ def draw_cards_command(instance, player, arguments):
     1: cards_to_draw - The number of cards to attempt to draw.
     2: ignore_empty_deck - A boolean controlling whether to ignore an
        empty deck or not. If it is true, cards can be drawn until the
-       deck runs out and then this command will return successfully. If it
-       is false, an error will occur if the deck runs out of cards and no
-       changes will be made to the hand of the player.
+       deck runs out and then this command will return
+       successfully. If it is false, an error will occur if the deck
+       runs out of cards and no changes will be made to the hand of
+       the player.
 
   Returns:
     The hand of the player after drawing the new cards.
 
   Raises:
-    An IndexError if the deck runs out of cards and empty deck errors are not
-    being ignored.
+    An IndexError if the deck runs out of cards and empty deck errors
+    are not being ignored.
     ValueError if the requesting player is not in the instance.
   """
   cards_to_draw = int(arguments[0])
@@ -149,14 +156,14 @@ def discard_command(instance, player, arguments):
     player: The email address of the player requesting the action.
     arguments: A list of cards to discard.
 
-  Discarded cards are removed from a player's hand permanently. They are
-  not re-added to the deck of cards to be dealt to other players. However,
-  once a deck is shuffled, all cards become available again including any
-  that have been discarded.
+  Discarded cards are removed from a player's hand permanently. They
+  are not re-added to the deck of cards to be dealt to other
+  players. However, once a deck is shuffled, all cards become
+  available again including any that have been discarded.
 
   If a player tries to discard a card that is not in their hand on the
-  server, the request to discard that particular card is ignored, but the
-  execution of the command continues.
+  server, the request to discard that particular card is ignored, but
+  the execution of the command continues.
 
   Returns:
     The current hand of the requesting player.
@@ -169,9 +176,9 @@ def pass_cards_to_player_command(instance, player, arguments):
   Args:
     instance: The GameInstance database model for this operation.
     player: The email address of the player requesting the action.
-    arguments: A list of two items. The first item is the email address
-      of the player to pass the cards to and the second is a list of
-      cards to pass to them.
+    arguments: A list of two items. The first item is the email
+      address of the player to pass the cards to and the second is a
+      list of cards to pass to them.
 
   Raises:
     A ValueError if the player to pass the cards to is not in the game
@@ -191,9 +198,9 @@ def get_cards_remaining_command(instance, player, arguments = None):
     arguments: Not used, can be any value.
 
   Returns:
-    The number of cards that can still be dealt before the deck is empty.
-    If the deck has not been set or no cards have been dealt (in the case
-    that the default deck is being used), returns -1.
+    The number of cards that can still be dealt before the deck is
+    empty.  If the deck has not been set or no cards have been dealt
+    (in the case that the default deck is being used), returns -1.
   """
   return cards_left(instance)
 
@@ -228,7 +235,8 @@ def set_deck(instance, deck):
     The number of cards in the new deck.
 
   Raises:
-    AttributeError if a deck has already been created for this instance.
+    AttributeError if a deck has already been created for this
+    instance.
   """
   if 'crd_deck' in instance.dynamic_properties():
     raise AttributeError('Deck can only be set as the first operation in '
@@ -245,8 +253,8 @@ def get_hand_dictionary(instance):
 
   Returns:
     A dictionary with a list for each player in the game. Each
-    player's list will include the cards currently in their hand. Keys in
-    the dictionary are the email addresses of players.
+    player's list will include the cards currently in their hand. Keys
+    in the dictionary are the email addresses of players.
   """
   if 'crd_hands' not in instance.dynamic_properties():
     return get_empty_hand_dictionary(instance)
@@ -260,8 +268,8 @@ def get_empty_hand_dictionary(instance):
     instance: The GameInstance database model for this operation.
 
   Returns:
-    A dictionary with an empty list for each player in the game. Keys in
-    the dictionary are the email addresses of players.
+    A dictionary with an empty list for each player in the game. Keys
+    in the dictionary are the email addresses of players.
   """
   hands = {}
   for player in instance.players:
@@ -273,13 +281,14 @@ def set_hand_dictionary(instance, hands, send_messages = True):
 
   Args:
     instance: The GameInstance database model for this operation.
-    hands: A dictionary containing the hand of each player in the game.
+    hands: A dictionary containing the hand of each player in the
+    game.
     send_messages: Whether or not to send a message to each player
       with their new hand.
 
-  Stores the hands dictionary in the game instance. If send_messages is
-  True, this will also send a new 'crd_hand' message to each player with
-  their new hand.
+  Stores the hands dictionary in the game instance. If send_messages
+  is True, this will also send a new 'crd_hand' message to each player
+  with their new hand.
   """
   if send_messages:
     message_list = []
@@ -338,9 +347,9 @@ def get_next_card(instance):
     instance: The GameInstance database model for this operation.
 
   Returns:
-    The Python representation of the next card in the deck. Because cards
-    are stored as JSON strings they are first decoded before being
-    returned.
+    The Python representation of the next card in the deck. Because
+    cards are stored as JSON strings they are first decoded before
+    being returned.
 
   Raises:
     ValueError if the JSON decoding fails.
@@ -402,22 +411,24 @@ def pass_cards(instance, from_player, to_player, cards):
   set_hand_dictionary(instance, hands)
   return hands[from_player]
 
-def discard(instance, player, cards):
+def discard(instance, player, cards, send_message = True):
   """ Remove the specified cards from player's hand.
 
   Args:
     instance: The GameInstance database model for this operation.
     player: The email address of the player to discard cards from.
     cards: The cards to be discarded.
+    send_message: Whether to send player a 'crd_hand' message
+      with their new hand.
 
-  Discarded cards are removed from a player's hand permanently. They are
-  not re-added to the deck of cards to be dealt to other players. However,
-  once a deck is shuffled, all cards become available again including any
-  that have been discarded.
+  Discarded cards are removed from a player's hand permanently. They
+  are not re-added to the deck of cards to be dealt to other
+  players. However, once a deck is shuffled, all cards become
+  available again including any that have been discarded.
 
   If a player tries to discard a card that is not in their hand on the
-  server, the request to discard that particular card is ignored, but the
-  execution of the command continues.
+  server, the request to discard that particular card is ignored, but
+  the execution of the command continues.
 
   Returns:
     The hand of player after discarding the cards.
@@ -431,7 +442,7 @@ def discard(instance, player, cards):
       hand.remove(card)
     except ValueError:
       pass
-  set_player_hand(instance, player, hand)
+  set_player_hand(instance, player, hand, send_message)
   return hand
 
 def deal_cards(instance, cards_to_deal, is_new_hand, ignore_empty_deck,
@@ -440,29 +451,34 @@ def deal_cards(instance, cards_to_deal, is_new_hand, ignore_empty_deck,
 
   Args:
     instance: The GameInstance database model for this operation.
-    cards_to_deal: The number of cards to deal as an integer.
-    is_new_hand: A boolean indicating whether this is a new hand or not.
-      If it is a new hand, then all hands will be cleared before the new
-      cards are dealt. If the deck is shuffled before the cards are dealt then
-      the hands are cleared automatically and this has no effect.
-    ignore_empty_deck: Another boolean controlling whether to ignore an
-      empty deck or not. If it is true, then cards will be dealt until the
-      deck runs out and then this command will return successfully. If it
-      is false, an error will occur if the deck runs out of cards.
-    deal_to: A list of player id's to be dealt to in the order to deal to them.
-      Cards will be dealt one at a time to players in the order that they
-      appear in this list.
 
-  The cards are dealt in the order determined by the last shuffling. Until
-  a deck is re-shuffled, cards will be dealt as if they were removed from
-  the top of the deck and given to the player permanently.
+    cards_to_deal: The number of cards to deal as an integer.
+    is_new_hand: A boolean indicating whether this is a new hand or
+      not.  If it is a new hand, then all hands will be cleared before
+      the new cards are dealt. If the deck is shuffled before the
+      cards are dealt then the hands are cleared automatically and
+      this has no effect.
+    ignore_empty_deck: Another boolean controlling whether to ignore
+      an empty deck or not. If it is true, then cards will be dealt
+      until the deck runs out and then this command will return
+      successfully. If it is false, an error will occur if the deck
+      runs out of cards.
+    deal_to: A list of player id's to be dealt to in the order to deal
+      to them.  Cards will be dealt one at a time to players in the
+      order that they appear in this list.
+
+  The cards are dealt in the order determined by the last
+  shuffling. Until a deck is re-shuffled, cards will be dealt as if
+  they were removed from the top of the deck and given to the player
+  permanently.
 
   Returns:
     The hand of the requesting player after cards are dealt.
 
   Raises:
     ValueError if a player in deal_to is not in the instance.
-    IndexError if the deck runs out of cards and ignore_empty_deck is not True.
+    IndexError if the deck runs out of cards and ignore_empty_deck is
+    not True.
   """
   hands = {}
   if not is_new_hand:
@@ -483,7 +499,8 @@ def deal_cards(instance, cards_to_deal, is_new_hand, ignore_empty_deck,
   set_hand_dictionary(instance, hands)
   return hands
 
-def draw_cards(instance, player, cards_to_draw, ignore_empty_deck = True):
+def draw_cards(instance, player, cards_to_draw,
+               ignore_empty_deck = True, send_message = True):
   """ Draw cards from the deck and put them into player's hand.
 
   Args:
@@ -492,16 +509,21 @@ def draw_cards(instance, player, cards_to_draw, ignore_empty_deck = True):
     cards_to_draw: The number of cards to draw from the deck.
     ignore_empty_deck - A boolean controlling whether to ignore an
        empty deck or not. If it is true, cards can be drawn until the
-       deck runs out and then this command will return successfully. If it
-       is false, an error will occur if the deck runs out of cards and no
-       changes will be made to the hand of the player.
+       deck runs out and then this command will return
+       successfully. If it is false, an error will occur if the deck
+       runs out of cards and no changes will be made to the hand of
+       the player.
+    send_message: Whether to send player a 'crd_hand' message
+      with their new hand.
 
   Returns:
-    The hand of the requesting player after they have drawn their cards.
+    The hand of the requesting player after they have drawn their
+    cards.
 
   Raises:
     ValueError if player is not in the game instance.
-    IndexError if the deck runs out of cards and ignore_empty_deck is not True.
+    IndexError if the deck runs out of cards and ignore_empty_deck is
+    not True.
   """
   hand = get_player_hand(instance, player)
   try:
@@ -510,7 +532,7 @@ def draw_cards(instance, player, cards_to_draw, ignore_empty_deck = True):
   except IndexError:
     if not ignore_empty_deck:
       raise
-  set_player_hand(instance, player, hand)
+  set_player_hand(instance, player, hand, send_message)
   return hand
 
 def cards_left(instance):
@@ -519,10 +541,10 @@ def cards_left(instance):
   Args:
     instance: The GameInstance database model for this operation.
 
-  Returns:
-    The number of cards that can still be dealt before the deck is empty.
-    If the deck has not been set or no cards have been dealt (in the case
-    that the default deck is being used), returns -1.
+  Returns
+    The number of cards that can still be dealt before the deck is
+    empty. If the deck has not been set or no cards have been dealt
+    (in the case that the default deck is being used), returns -1.
   """
   if 'crd_deck' not in instance.dynamic_properties():
     return -1

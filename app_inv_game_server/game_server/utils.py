@@ -46,8 +46,8 @@ def get_instance_model(gid, iid):
     iid: The instance id of the GameInstance.
 
   Returns:
-    The database model for the specified ids or None if the GameInstance
-    doesn't exist..
+    The database model for the specified ids or None if the
+    GameInstance doesn't exist..
   """
   instance_key = Key.from_path('Game', gid, 'GameInstance', iid)
   model = db.get(instance_key)
@@ -57,18 +57,19 @@ def check_playerid(pid, instance = None):
   """ Return a valid player id.
 
   Args:
-    pid: A string containing the email address of the player or the special
-      identified 'leader'.
-    instance: (optional) The instance from which to fetch the leader from
-      when pid is 'leader'.
+    pid: A string containing the email address of the player or the
+      special identified 'leader'.
+    instance: (optional) The instance from which to fetch the leader
+      from when pid is 'leader'.
 
   Returns:
-    Strips the supplied player id of superfluous characters and returns only
-    the email address. Also does conversion of the special string 'leader' to
-    the current leader of instance.
+    Strips the supplied player id of superfluous characters and
+    returns only the email address. Also does conversion of the
+    special string 'leader' to the current leader of instance.
 
   Raises:
-    ValueError if pid does not match an email address regular expression.
+    ValueError if pid does not match an email address regular
+    expression.
   """
   if instance and pid.lower() == 'leader':
     pid = instance.leader
@@ -121,17 +122,18 @@ def get_boolean(value):
   Returns:
     If value is a bool, value is returned without modification.
 
-    If value is a string this will convert 'true', 'True', 'false' and
-    'False' to their associated bool values.
+    If value is a string this will convert 'true' and 'false'
+    (ignoring case) to their associated values.
 
   Raises:
-    ValueError if value does not match one of the string tests and is not
-    a bool.
+    ValueError if value does not match one of the string tests and is
+    not a bool.
   """
   if type(value) is not bool:
-    if value == 'true' or value == 'True':
+    value = value.lower()
+    if value == 'true':
       value = True
-    elif value == 'false' or value == 'False':
+    elif value == 'false':
       value = False
     else:
       raise ValueError("Boolean value was not valid")
@@ -144,7 +146,8 @@ def get_game(model):
     model: A database model that is either a GameInstance or Game.
 
   Returns:
-    Either returns model or its parent if either of them is a Game object.
+    Either returns model or its parent if either of them is a Game
+    object.
 
   Raises:
     ValueError if either model or its parent is not a Game object.

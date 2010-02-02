@@ -42,16 +42,16 @@ def test_wrong_round():
   char_card = response['contents'][0]
   contents = test_utils.post_server_command(iid, 'ata_submit_card', [2, ''],
                                             pid = firstpid)['contents']
-  assert contents[0] == 'wrong_round'
-  assert contents[1] == current_round
-  assert contents[2] == char_card
+  assert isinstance(contents[0], basestring)
+  assert len(contents[1]) == 7
+  assert contents[2] == current_round
+  assert contents[3] == char_card
   contents = test_utils.post_server_command(iid, 'ata_end_turn', [2, ''],
                                             pid = firstpid)['contents']
-  assert contents[0] == 'wrong_round'
-  assert contents[1] == current_round
-  assert contents[2] == char_card
-
-
+  assert isinstance(contents[0], basestring)
+  assert len(contents[1]) == 7
+  assert contents[2] == current_round
+  assert contents[3] == char_card
 
 def test_leader_fails_at_submitting():
   iid = test_utils.make_instance()
@@ -90,10 +90,10 @@ def test_full_game():
       response = test_utils.post_server_command(iid, 'ata_submit_card',
                                                 [current_round, card],
                                                 pid = player)
-      player_cards[player] = response['contents'][1]
+      player_cards[player] = response['contents'][2]
       player_submissions[player] = card
       for c in player_submissions.values():
-        assert c in response['contents'][2]
+        assert c in response['contents'][1]
     assert len(player_cards[player]) == 7
 
   instance = test_utils.get_instance_model(iid)
@@ -112,10 +112,10 @@ def test_full_game():
                                             [current_round,
                                              player_submissions[winner]],
                                             pid = instance.leader)['contents']
-  assert contents[0] == 2
-  assert contents[2] == winner
-  assert contents[3] == player_submissions[winner]
-  assert [1, winner] in contents[4]
+  assert contents[2] == 2
+  assert contents[3] == winner
+  assert contents[4] == player_submissions[winner]
+  assert [1, winner] in contents[1]
   current_round = current_round + 1
   instance = test_utils.get_instance_model(iid)
   assert instance.ata_round == current_round
@@ -124,9 +124,9 @@ def test_full_game():
   for player in players:
     new_round_msg = test_utils.get_messages(iid, 'ata_new_round', '',
                                             1, pid = player)[0]['contents']
-    assert new_round_msg[0] == 2
-    assert new_round_msg[2] == winner
-    assert new_round_msg[3] == player_submissions[winner]
+    assert new_round_msg[2] == 2
+    assert new_round_msg[3] == winner
+    assert new_round_msg[4] == player_submissions[winner]
 
   # Accelerate the game, next point wins
   for player in players:
@@ -142,20 +142,65 @@ def test_full_game():
                                             [current_round, winning_card],
                                             pid = instance.leader)['contents']
   assert contents[0] == current_round
-  assert contents[1] == winner
-  assert contents[2] == winning_card
-  assert [5, winner] in contents[3]
+  assert contents[1] == winning_card
+  assert [5, winner] in contents[2]
 
   # Check for game over messages
   for player in players:
     contents = test_utils.get_messages(iid, 'ata_game_over', '',
                                        1, pid = player)[0]['contents']
     assert contents[0] == current_round
-    assert contents[1] == winner
-    assert contents[2] == winning_card
-    assert [5, winner] in contents[3]
+    assert contents[1] == winning_card
+    assert [5, winner] in contents[2]
 
   instance = test_utils.get_instance_model(iid)
   assert 'ata_round' not in instance.dynamic_properties()
   assert 'ata_char_card' not in instance.dynamic_properties()
   assert 'ata_submissions' not in instance.dynamic_properties()
+
+def test_player_left():
+  iid = test_utils.make_instance()
+  for player in init_players:
+    test_utils.add_player(iid, player)
+
+  # Start the game
+  current_round = 1
+  response = test_utils.post_server_command(iid, 'ata_new_game', [])
+
+  instance = test_utils.get_instance_model(iid)
+  noun_cards_left = card_game.cards_left(instance)
+  assert instance.ata_round == current_round
+
+  # Get the cards
+  for player in players:
+    hand = test_utils.get_messages(iid, 'crd_hand', '', 1, pid = player)[0]
+    assert len(hand['contents']) == 7
+    player_cards[player] = hand['contents']
+
+  player_submissions = {}
+
+  instance = test_utils.get_instance_model(iid)
+  removed_player = instance.players[2]
+  instance.players.remove(removed_player)
+  instance.put()
+
+  card = player_cards[player].pop()
+  response = test_utils.post_server_command(iid, 'ata_submit_card',
+                                            [current_round, card],
+                                            pid = instance.players[1])
+  assert len(response['contents']) == 1
+  instance = test_utils.get_instance_model(iid)
+  assert removed_player in instance.invited
+  test_utils.add_player(iid, removed_player)
+  # Submit cards
+  for player in players:
+    if player != instance.leader:
+      card = player_cards[player].pop()
+      response = test_utils.post_server_command(iid, 'ata_submit_card',
+                                                [current_round, card],
+                                                pid = player)
+      player_cards[player] = response['contents'][2]
+      player_submissions[player] = card
+      for c in player_submissions.values():
+        assert c in response['contents'][1]
+    assert len(player_cards[player]) == 7

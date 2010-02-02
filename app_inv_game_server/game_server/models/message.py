@@ -19,7 +19,7 @@ from django.utils import simplejson
 from game_server import iso8601
 from google.appengine.ext import db
 
-class Message(db.Model):
+class Message(db.Expando):
   """ A model for a message sent to a player in a game instance.
 
   Messages are used to pass information from player to player and from
@@ -46,11 +46,10 @@ class Message(db.Model):
       type: msg_type
       mrec: recipient
       contents: the Python representation of the content JSON string.
-      mtime: The iso8601 string representation of the creation time of the
-        message.
+      mtime: The iso8601 string representation of the creation time of
+        the message.
       msender: sender
     """
-    self.date = iso8601.parse_date(self.date.isoformat())
     return {'type' : self.msg_type, 'mrec' : self.recipient,
             'contents' : simplejson.loads(self.content),
             'mtime' : self.date.isoformat(),
@@ -59,3 +58,7 @@ class Message(db.Model):
   def to_json(self):
     """ Return a json representation of the dictionary of this message. """
     return simplejson.dumps(self.to_dictionary())
+
+  def get_content(self):
+    """ Return the Python representation of the contents of this message. """
+    return simplejson.loads(self.content)

@@ -69,6 +69,37 @@ def test_new_instance():
   assert response['request_type'] == '/newinstance'
   assert iid in response['response']['joined']
 
+def test_new_public_instance():
+  test_iid = 'iid_prefix'
+  response = app.post('/newinstance',
+                      {'gid': gid, 'iid' : test_iid,
+                       'pid' : firstpid, 'makepublic' : True}).json
+
+  assert response['e'] is False
+  iid = response['iid']
+  assert iid.startswith(test_iid)
+  assert iid in response['response']['joined']
+  assert test_utils.get_instance_model(iid).public == True
+  response = app.post('/getinstancelists',
+                      {'gid': gid,
+                       'iid' : '',
+                       'pid' : firstpid}).json
+  assert response['response']['invited'] == []
+  assert iid in response['response']['joined']
+  assert iid in response['response']['public']
+
+def test_new_public_instance_false():
+  test_iid = 'iid_prefix'
+  response = app.post('/newinstance',
+                      {'gid': gid, 'iid' : test_iid,
+                       'pid' : firstpid, 'makepublic' : False}).json
+
+  assert response['e'] is False
+  iid = response['iid']
+  assert iid.startswith(test_iid)
+  assert iid in response['response']['joined']
+  assert test_utils.get_instance_model(iid).public == False
+
 def test_invite_player():
   test_iid = test_utils.make_instance()
   invitee = 'invitee@test.com'
@@ -127,6 +158,28 @@ def test_join_instance():
   assert instances['joined'] == response['response']['joined']
   assert test_iid not in instances['invited']
   assert test_iid in instances['joined']
+
+def test_leave_instance():
+  test_utils.clear_data_store()
+  iid = test_utils.make_instance()
+  other = 'new@a.com'
+  test_utils.add_player(iid, other)
+  response = app.post('/leaveinstance', {'gid': gid, 'iid' : iid,
+                                         'pid' : firstpid}).json
+  assert response['e'] is False
+  assert response['request_type'] == '/leaveinstance'
+  assert response['leader'] == ''
+  assert response['response']['joined'] == []
+  response = app.post('/leaveinstance', {'gid': gid, 'iid' : iid,
+                                         'pid' : other}).json
+  assert response['e'] is False
+  assert response['request_type'] == '/leaveinstance'
+  assert response['leader'] == ''
+  assert response['iid'] == ''
+  assert response['response']['joined'] == []
+  response = app.post('/joininstance', {'gid': gid, 'iid' : iid,
+                                        'pid' : firstpid}).json
+  assert response['e'] is True
 
 def test_set_leader():
   test_iid = test_utils.make_instance()

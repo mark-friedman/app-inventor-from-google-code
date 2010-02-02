@@ -22,15 +22,16 @@ from game_instance import GameInstance
 class Game(db.Model):
   """ A model for a game type.
 
-  A Game is the parent object of GameInstance objects. Each Game object
-  should correspond to a type of game. Class methods are available that
-  provide queries to discover GameInstance objects with this parent.
+  A Game is the parent object of GameInstance objects. Each Game
+  object should correspond to a type of game. Class methods are
+  available that provide queries to discover GameInstance objects
+  with this parent.
 
   The key_name of a Game should be the game's name.
 
   Attributes:
-    instance_count: The number of instances that have been made with this
-      Game as their parent. This number is managed manually.
+    instance_count: The number of instances that have been made with
+      this Game as their parent. This number is managed manually.
   """
   instance_count = db.IntegerProperty(default=0)
 
@@ -41,13 +42,14 @@ class Game(db.Model):
       prefix: A string used as the beginning of the instance id.
       player: The email address of the player.
 
-    When this returns, neither this Game model or the new GameInstance
-    have been put() in the database. If the GameInstance should persist,
-    both models need to be put().
+    When this returns, neither this Game model or the new
+    GameInstance have been put() in the database. If the GameInstance
+    should persist, both models need to be put().
 
     Returns:
-      A GameInstance object with a unique instance id beginning with prefix
-      and player as the leader and sole member of the instance.
+      A GameInstance object with a unique instance id beginning with
+      prefix and player as the leader and sole member of the
+      instance.
     """
     prefix = prefix.replace(' ', '')
     new_iid = prefix
@@ -60,16 +62,20 @@ class Game(db.Model):
                           players = [player], leader = player)
     return instance
 
-  def get_public_instances_query(self):
+  def get_public_instances_query(self, keys_only = False):
     """ Return a query object for public instances of this game.
 
+    Args:
+      keys_only (optional): Whether this database query should return
+        only keys, or entire models.
+
     Returns:
-      A query object of all public game instances that are not full in
-      order of creation time from oldest to newest. Any instance
-      returned by this query should be able to be joined by any player
-      at the time the results are fetched.
+      A query object of all public game instances that are not full
+      in order of creation time from oldest to newest. Any instance
+      returned by this query should be able to be joined by any
+      player at the time the results are fetched.
     """
-    query = GameInstance.all()
+    query = GameInstance.all(keys_only = keys_only)
     query.filter("public =", True)
     query.filter("full =", False)
     query.ancestor(self.key())
@@ -83,10 +89,11 @@ class Game(db.Model):
       player: The email address of the player.
 
     Returns:
-      A query object of all game instances that player has been invited to and
-      that are not full in order of creation time from oldest to newest. Any
-      instance returned by this query should be able to be joined by the player
-      at the time the results are fetched.
+      A query object of all game instances that player has been
+      invited to and that are not full in order of creation time from
+      oldest to newest. Any instance returned by this query should be
+      able to be joined by the player at the time the results are
+      fetched.
     """
     query = GameInstance.all(keys_only = True)
     query.filter("invited =", player)
@@ -102,8 +109,8 @@ class Game(db.Model):
       player: The email address of the player.
 
     Returns:
-      A query object of all game instances that player has joined in order
-      of creation time from oldest to newest.
+      A query object of all game instances that player has joined in
+      order of creation time from oldest to newest.
     """
     query = GameInstance.all(keys_only = True)
     query.filter("players =", player)

@@ -38,6 +38,16 @@ the following command:
 ./google_appengine/appcfg.py update .
 
 ---
+Sending emails from the server
+---
+
+One of the built in server commands allows players to send emails from
+the server (see game_server/server_commands.py). In order for this to
+work, the EMAIL_SENDER variable must be set to the email address one
+of the developers of your App Engine application. All emails will be
+sent from that address.
+
+---
 Included Files
 ---
 

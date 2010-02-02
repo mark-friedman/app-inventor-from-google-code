@@ -14,7 +14,11 @@
 Tests the Bulls and Cows custom module.
 """
 
+__authors__ = ['"Bill Magnuson" <billmag@mit.edu>']
+
 from tests import test_utils
+from google.appengine.ext.db import Key
+from game_server.models.message import Message
 
 gid = test_utils.gid
 firstpid = test_utils.firstpid
@@ -25,50 +29,52 @@ def setUp():
 
 def test_wrong_size_guess():
   iid = test_utils.make_instance()
-  test_utils.post_server_command(iid, 'bac_new_game', [])
-  test_utils.post_server_command(iid, 'bac_guess', ['Blue'],
+  game_id = new_game(iid)
+  test_utils.post_server_command(iid, 'bac_guess', [game_id, ['Blue']],
                                  error_expected = True)
 
-def test_too_many_players():
+def test_with_two_players():
   iid = test_utils.make_instance()
   test_utils.add_player(iid, 'bob@gmail.com')
-  test_utils.post_server_command(iid, 'bac_new_game', [],
-                                 error_expected = True)
+  game_id = new_game(iid)
+  bob_game_id = new_game(iid, 'bob@gmail.com')
+  assert get_game(iid, game_id)
+  assert get_game(iid, bob_game_id)
 
 def test_out_of_guesses():
   iid = test_utils.make_instance()
-  test_utils.post_server_command(iid, 'bac_new_game', [])
-  instance = test_utils.get_instance_model(iid)
-  instance.bac_guesses_remaining = 0
-  instance.put()
+  game_id = new_game(iid)
+  game = get_game(iid, game_id)
+  game.bac_guesses_remaining = 0
+  game.put()
   guess = ['Blue', 'Yellow', 'Green', 'Red']
-  test_utils.post_server_command(iid, 'bac_guess', [1,2,3,4],
+  test_utils.post_server_command(iid, 'bac_guess', [game_id, [guess]],
                                  error_expected = True)
 
 def test_guesses():
   iid = test_utils.make_instance()
-  test_utils.post_server_command(iid, 'bac_new_game', [])
-  instance = test_utils.get_instance_model(iid)
-  guess = instance.bac_solution[::-1]
-  score = instance.bac_score
-  guesses = instance.bac_guesses_remaining
-  response = test_utils.post_server_command(iid, 'bac_guess', guess)
+  game_id = new_game(iid)
+  game = get_game(iid, game_id)
+  guess = game.bac_solution[::-1]
+  score = game.bac_score
+  guesses = game.bac_guesses_remaining
+  response = test_utils.post_server_command(iid, 'bac_guess', [game_id, guess])
   assert response['contents'] == [guesses - 1, score - 4, 0, 4]
-  guess = [instance.bac_solution[0]]*4
-  response = test_utils.post_server_command(iid, 'bac_guess', guess)
+  guess = [game.bac_solution[0]]*4
+  response = test_utils.post_server_command(iid, 'bac_guess', [game_id, guess])
   assert response['contents'] == [guesses - 2, score - 7, 1, 3]
 
 def test_got_solution():
   iid = test_utils.make_instance()
-  test_utils.post_server_command(iid, 'bac_new_game', [])
-  instance = test_utils.get_instance_model(iid)
-  guess = instance.bac_solution
-  score = instance.bac_score
-  guesses = instance.bac_guesses_remaining
-  response = test_utils.post_server_command(iid, 'bac_guess', guess)
-  assert response['contents'] == [guesses - 1, score, score, 1, True]
-  instance = test_utils.get_instance_model(iid)
-  assert instance.bac_guesses_remaining == 0
+  game_id = new_game(iid)
+  game = get_game(iid, game_id)
+  guess = game.bac_solution
+  score = game.bac_score
+  guesses = game.bac_guesses_remaining
+  response = test_utils.post_server_command(iid, 'bac_guess', [game_id, guess])
+  assert response['contents'] == [[score, score, 1], True]
+  game = get_game(iid, game_id)
+  assert game.bac_guesses_remaining == 0
 
 def test_guess_before_new_game():
   iid = test_utils.make_instance()
@@ -77,22 +83,60 @@ def test_guess_before_new_game():
 
 def test_resend_guess():
   iid = test_utils.make_instance()
-  test_utils.post_server_command(iid, 'bac_new_game', [])
-  instance = test_utils.get_instance_model(iid)
-  guess = instance.bac_solution[::-1]
-  score = instance.bac_score
-  guesses = instance.bac_guesses_remaining
-  response = test_utils.post_server_command(iid, 'bac_guess', guess)
+  game_id = new_game(iid)
+  game = get_game(iid, game_id)
+  guess = game.bac_solution[::-1]
+  score = game.bac_score
+  guesses = game.bac_guesses_remaining
+  response = test_utils.post_server_command(iid, 'bac_guess', [game_id, guess])
   assert response['contents'] == [guesses - 1, score - 4, 0, 4]
-  response = test_utils.post_server_command(iid, 'bac_guess', guess)
+  response = test_utils.post_server_command(iid, 'bac_guess', [game_id, guess])
   assert response['contents'] == [guesses - 1, score - 4, 0, 4]
-  guess = [instance.bac_solution[0]]*4
-  response = test_utils.post_server_command(iid, 'bac_guess', guess)
+  guess = [game.bac_solution[0]]*4
+  response = test_utils.post_server_command(iid, 'bac_guess', [game_id, guess])
   assert response['contents'] == [guesses - 2, score - 7, 1, 3]
-  response = test_utils.post_server_command(iid, 'bac_guess', guess)
+  response = test_utils.post_server_command(iid, 'bac_guess', [game_id, guess])
   assert response['contents'] == [guesses - 2, score - 7, 1, 3]
-  guess = instance.bac_solution
-  response = test_utils.post_server_command(iid, 'bac_guess', guess)
-  assert response['contents'] == [guesses - 3, score - 7, score - 7, 1, True]
-  response = test_utils.post_server_command(iid, 'bac_guess', guess)
-  assert response['contents'] == [guesses - 3, score - 7, score - 7, 1, True]
+  guess = game.bac_solution
+  response = test_utils.post_server_command(iid, 'bac_guess', [game_id, guess])
+  assert response['contents'] == [[score - 7, score - 7, 1], True]
+  response = test_utils.post_server_command(iid, 'bac_guess', [game_id, guess])
+  assert response['contents'] == [[score - 7, score - 7, 1], True]
+
+def test_two_games_at_once():
+  bob = 'bob@gmail.com'
+  iid = test_utils.make_instance()
+  test_utils.add_player(iid, bob)
+  game_id = new_game(iid)
+  bob_game_id = new_game(iid, bob)
+  game = get_game(iid, game_id)
+  bob_game = get_game(iid, bob_game_id)
+  guess = game.bac_solution[::-1]
+  score = game.bac_score
+  response = test_utils.post_server_command(iid, 'bac_guess',
+                                            [game_id, guess])
+  guess = bob_game.bac_solution
+  response = test_utils.post_server_command(iid, 'bac_guess',
+                                            [bob_game_id, guess], pid = bob)
+  assert response['contents'] == [[score, score, 1], True]
+  guess = game.bac_solution
+  response = test_utils.post_server_command(iid, 'bac_guess',
+                                            [game_id, guess])
+  assert response['contents'] == [[score - 4, score - 4, 1], True]
+
+def test_not_your_game():
+  bob = 'bob@gmail.com'
+  iid = test_utils.make_instance()
+  test_utils.add_player(iid, bob)
+  game_id = new_game(iid)
+  response = test_utils.post_server_command(
+      iid, 'bac_guess', [game_id, ['Blue'] * 4], pid = bob,
+      error_expected = True)
+
+def new_game(iid, pid = firstpid):
+  return test_utils.post_server_command(iid, 'bac_new_game', [],
+                                        pid = pid)['contents'][3]
+
+def get_game(iid, game_id):
+  key = Key.from_path('Game', gid, 'GameInstance', iid, 'Message', game_id)
+  return Message.get(key)

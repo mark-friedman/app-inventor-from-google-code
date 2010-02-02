@@ -73,9 +73,17 @@ def test_get_score():
   iid = test_utils.make_instance_with_players()
   set_score(iid, firstpid, 100)
   set_score(iid, players[1], 200)
-  assert get_score(iid, firstpid) == 100
-  assert get_score(iid, players[1]) == 200
-  assert get_score(iid, players[2]) == 0
+  assert get_score(iid, firstpid)[0] == 100
+  assert get_score(iid, players[1])[0] == 200
+  assert get_score(iid, players[2])[0] == 0
+
+def test_get_and_set_score_list():
+  iid = test_utils.make_instance_with_players()
+  set_score(iid, firstpid, [100, 2])
+  set_score(iid, players[1], [200, 1])
+  assert get_score(iid, firstpid) == [100, 2]
+  assert get_score(iid, players[1]) == [200, 1]
+  assert get_score(iid, players[2]) == [0]
 
 def test_clear_and_get_scoreboard():
   iid = test_utils.make_instance_with_players()
@@ -105,4 +113,4 @@ def set_score(iid, player, score):
 
 def get_score(iid, player):
   response = test_utils.post_server_command(iid, 'scb_get_score', [player])
-  return response['contents'][0]
+  return response['contents']
