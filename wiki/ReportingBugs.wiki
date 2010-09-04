@@ -8,3 +8,4 @@ Thanks for taking the trouble to file a bug report.   Here are some things to ke
 
   * Some common issues people have with App Inventor, especially on Windows systems, have to do with finding drivers for particular Android devices.   Before posting a bug here, try searching the Web for information about Android or "Android SDK" and your device.
 
+===[http://code.google.com/p/app-inventor-for-android/issues/list Go to the bug report tool]===
