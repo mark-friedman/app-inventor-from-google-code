@@ -2,7 +2,7 @@
 
 Thanks for taking the trouble to file a bug report.   Here are some things to keep in mind:
 
-   * Before filing the report, please scan the list of issues to see if your report duplicates an issue that's already there.  If you like, you can click on the original report and add a comment, rather than creating a new issue.
+   * Before filing the report, please scan the list of issues to see if your report duplicates an issue that's already there.  If you like, you can click on the "star" next to a bug to vote on the bug as one that you'd like to be fixed.  You can also click on the original report and add a comment, rather than creating a new issue.
 
    * If you are seeking help, rather than reporting a bug, you should generally post to the [http://groups.google.com/group/appinventor App Inventor Group Forum] rather than use this bug report tool.  It's a good idea in any case, to search in the forum before reporting a bug, to see if other App Inventor community members have commented on the issue.
 
