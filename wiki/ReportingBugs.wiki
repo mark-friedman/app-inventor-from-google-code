@@ -6,6 +6,6 @@ Thanks for taking the trouble to file a bug report.   Here are some things to ke
 
    * If you are seeking help (not just reporting a bug), you should generally post to the [http://groups.google.com/group/appinventor App Inventor Group Forum] rather than use this bug report tool. In any case, it's a good idea to search in the forum before reporting a bug, to see if other App Inventor community members have commented on the issue. 
 
-  *  Some of the common issues people have with App Inventor have to do with trouble connecting the Android device to the computer, or installing drivers.   You should ask about these in the [http://groups.google.com/group/appinventor App Inventor Group Forum] rather than use this bug report tool.   Many of these issues  are not specific to App Inventor.   So try searching the Web  under "Android" or "Android SDK" and your particular device.   
+  *  Some of the common issues people have with App Inventor involve trouble connecting the Android device to the computer, or installing drivers.   You should ask about these in the [http://groups.google.com/group/appinventor App Inventor Group Forum] rather than use this bug report tool.   Many of these issues  are not specific to App Inventor.   So try searching the Web  under "Android" or "Android SDK" and your particular device.   
 
 ===[http://code.google.com/p/app-inventor-for-android/issues/list Go to the issues list]===
