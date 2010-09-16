@@ -26,5 +26,5 @@ The meaning of the status column is:
 ||Fixed           ||      Issue has been resolved. ||
 || Invalid        ||       This was not a valid issue report ||
 || Duplicate    ||      This report duplicates an existing issue ||
-||WontFix        ||     We decided to not take action on this issue ||
+||Won't Fix        ||     We decided to not take action on this issue ||
 ||Forum           ||   Issue has been referred to the group forum ||
