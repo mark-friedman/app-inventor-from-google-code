@@ -12,7 +12,7 @@ Thanks for taking the trouble to file a bug report.   Here are some things to ke
 
 ----
 
-The meaning of the status column is:
+The meaning of the status column in the issues list is:
 
 *Open Issues*
 
