@@ -9,3 +9,22 @@ Thanks for taking the trouble to file a bug report.   Here are some things to ke
   *  Some of the common issues people have with App Inventor involve trouble connecting the Android device to the computer, or installing drivers.   You should ask about these in the [http://groups.google.com/group/appinventor App Inventor Group Forum] rather than use this bug report tool.   Many of these issues  are not specific to App Inventor.   So try searching the Web  under "Android" or "Android SDK" and your particular device.   
 
 ===[http://code.google.com/p/app-inventor-for-android/issues/list Go to the issues list]===
+
+----
+
+The meaning of the status column is:
+
+*Open Issues*
+
+||New             ||      Issue has not yet been reviewed ||
+|| Investigating    || Issue is being investigated ||
+||Accepted    ||   The issue will be worked on ||
+|| Started        ||       Work on this issue has begun ||
+||Testing         ||     Work is being tested and prepared for release. ||
+
+*Closed Issues*
+||Fixed           ||      Issue has been resolved. ||
+|| Invalid        ||       This was not a valid issue report ||
+|| Duplicate    ||      This report duplicates an existing issue ||
+||WontFix        ||     We decided to not take action on this issue ||
+||Forum           ||   Issue has been referred to the group forum ||
