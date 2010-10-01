@@ -17,7 +17,7 @@ The meaning of the status column in the issues list is:
 *Open Issues*
 
 ||New             ||      Issue has not yet been reviewed ||
-|| Investigating    || Issue is being investigated ||
+|| Investigating    || We're waiting for more information ||
 ||Accepted    ||   The issue will be worked on ||
 || Started        ||       Work on this issue has begun ||
 ||Testing         ||     Work is being tested and prepared for release. ||
