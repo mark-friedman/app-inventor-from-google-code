@@ -18,6 +18,7 @@ The meaning of the status column in the issues list is:
 
 ||New             ||      Issue has not yet been reviewed ||
 || Investigating    || We're waiting for more information ||
+|| Noted || Issue has been acknowledged by not yet accepted for work queue ||
 ||Accepted    ||   The issue is in our prioritized work queue ||
 || Started        ||       Work on this issue has begun ||
 ||Testing         ||     Work is being tested and prepared for release. ||
