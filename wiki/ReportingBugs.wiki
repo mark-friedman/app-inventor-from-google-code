@@ -18,7 +18,7 @@ Before reporting an issue, please search the list of existing issues to see if a
 
 ----
 
-*[http://code.google.com/p/app-inventor-for-android/issues/list Click here to go directly to  the issues list]* only after you've searched, and you'd like to open a new issue.
+*Only after you've searched, and you'd like to open a new issue:* [http://code.google.com/p/app-inventor-for-android/issues/list Click here to go directly to  the issues list]* 
 
 ----
 
