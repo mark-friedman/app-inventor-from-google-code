@@ -13,7 +13,7 @@ Thanks for taking the trouble to file a bug report.   Here are some things to ke
 Before reporting an issue, please search the list of existing issues to see if a similar one has already been reported.  If so, add a comment or a star to the existing issue rather than filing a new issue.
 
 <blockquote>
-*[http://code.google.com/p/app-inventor-for-android/issues/advsearch Click here to search existing issues]*
+<a href="http://code.google.com/p/app-inventor-for-android/issues/advsearch"> <h3>Click here to search the existing issues</h3></a>
 </blockquote>
 
 ----
