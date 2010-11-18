@@ -2,7 +2,7 @@
 
 Thanks for taking the trouble to file a bug report.   Here are some things to keep in mind:
 
-   * If your issue involves _connecting or communicating with the phone_  you do not file a bug report here.  Instead, post to the "Getting Set Up and Connecting Your Phone" section of the [http://appinventor.googlelabs.com/forum App Inventor Discussion Forum].  
+   * If your issue involves *connecting or communicating with the phone*, do not file a bug report here.  Instead, post to the "Getting Set Up and Connecting Your Phone" section of the [http://appinventor.googlelabs.com/forum App Inventor Discussion Forum].  
 
    * Before filing the report, please scan the list of issues to see if your report duplicates an issue that's already there. When you file a new issue, please select the appropriate template for reporting a bug, versus requesting a feature.  You can also click on the star  to vote on the issue as one that you'd like to see dealt with.  You can also click on the original report and add a comment, rather than creating a new issue.  You can also tell the system to send you email when the issue has been updated.
 
