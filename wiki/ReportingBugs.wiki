@@ -1,4 +1,4 @@
-== Bug reports and feature requests ==
+== App Inventor Issues List: For Bug reports and feature requests ==
 
 Thanks for taking the trouble to file a bug report.   Here are some things to keep in mind:
 
