@@ -8,9 +8,10 @@ Thanks for taking the trouble to file a bug report.   Here are some things to ke
 
    * If you are seeking help (not just reporting a bug), you should generally post to the appropriate subgroup in the [http://appinventor.googlelabs.com/forum App Inventor Discussion Forum] rather than use this bug report tool. In any case, it's a good idea to search in the forum before reporting a bug, to see if other App Inventor community members have commented on the issue. 
 
+  * Note that it is often useful to see the information from the Android log (for problems that occur on the phone or emulator) or the Java Console log (for problem in the Blocks Editor).  Please see the section near the end of [http://appinventor.googlelabs.com/learn/reference/other/testing.html documentation page on testing] for information on how to access those logs.
+
 *Before reporting an issue:* 
 Before reporting an issue, please search the list of existing issues to see if a similar one has already been reported.  If so, add a comment or a star to the existing issue rather than filing a new issue.
-
 <blockquote>
 <a href="http://code.google.com/p/app-inventor-for-android/issues/advsearch"> <h3>Click here to search the existing issues</h3></a>
 </blockquote>
