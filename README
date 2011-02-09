@@ -27,3 +27,7 @@ Contents:
 + samples/HelloHappyFace/
     A sample Android source tree for a simple Android app that uses App Inventor components.
 
++ samples/AppInventorInJavaSample/
+    A more extensive sample of using App Inventor components in a
+    standard Android Java program.  Includes a simple new component
+    definition.
