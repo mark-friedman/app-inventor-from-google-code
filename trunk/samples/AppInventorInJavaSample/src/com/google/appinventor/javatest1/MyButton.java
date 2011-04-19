@@ -58,7 +58,7 @@ public class MyButton extends ButtonBase {
   /**
    * Indicates a user has clicked on the button.
    */
-  // The SimpleObject annotation is required for all event handling methods
+  // The SimpleEvent annotation is required for all event handling methods
   @SimpleEvent(description = "Handler for click events.")
   public void Click() {
     // This is what causes the App Inventor runtime to invoke the "Click" event for this object.
