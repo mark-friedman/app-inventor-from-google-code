@@ -1,0 +1,97 @@
+App Inventor Game Server Readme.
+
+The App Inventor Game Server is an App Engine server for communicating
+with the App Inventor Game Client component.
+
+---
+Helpful Commands
+---
+
+All commands below assume that you have unzipped the Python Google App
+Engine SDK into this directory. To get the SDK, visit the App Engine
+site at http://code.google.com/appengine/downloads.html
+
+The game server also comes with a full suite of tests utilizing Nose
+GAE (http://code.google.com/p/nose-gae/). To run the tests you must
+first install the nose, nosegae, WebTest and simplejson Python
+packages. Getting these installed will vary from machine to machine,
+but most linux and OS X users can use easy_install from the command
+line:
+sudo easy_install-2.5 nose
+sudo easy_install-2.5 nosegae
+sudo easy_install-2.5 WebTest
+sudo easy_install-2.5 simplejson
+
+Once the packages are installed, to run the unit tests execute the 
+following command from this directory:
+nosetests --with-gae --gae-lib-root=google_appengine -s
+
+To start the server on the local machine use the following command:
+python2.5 google_appengine/dev_appserver.py -p 9999 .
+
+After starting the dev_appserver you can access the web interface by
+pointing a web browser to http://localhost:9999
+
+To upload the application to AppSpot, first modify app.yaml to match
+the target application name for your App Engine server. Then, execute
+the following command:
+./google_appengine/appcfg.py update .
+
+---
+Sending emails from the server
+---
+
+One of the built in server commands allows players to send emails from
+the server (see game_server/server_commands.py). In order for this to
+work, the EMAIL_SENDER variable must be set to the email address one
+of the developers of your App Engine application. All emails will be
+sent from that address.
+
+---
+Included Files
+---
+
+./:
+COPYING  README  app.yaml  custom_modules  game_server  index.yaml  
+main.py  tests
+
+./custom_modules/:
+__init__.py  androids_to_androids  bulls_and_cows  commands.py
+
+./custom_modules/androids_to_androids/:
+__init__.py  ata_commands.py  decks.py
+
+./custom_modules/bulls_and_cows/:
+__init__.py  bac_commands.py
+
+./game_server/:
+__init__.py  autoretry_datastore.py  extensions  iso8601.py  models  
+server.py	server_commands.py  utils.py
+
+./game_server/extensions/:
+__init__.py  card_game.py  scoreboard.py
+
+./game_server/models/:
+__init__.py  game.py  game_instance.py	message.py
+
+./tests/:
+__init__.py  test_custom_modules  test_game_server  test_utils.py
+
+./tests/test_custom_modules/:
+__init__.py  test_androids_to_androids test_bulls_and_cows
+
+./tests/test_custom_modules/test_androids_to_androids/:
+__init__.py  test_ata_commands.py
+
+./tests/test_custom_modules/test_bulls_and_cows/:
+__init__.py  test_bac_commands.py
+
+./tests/test_game_server/:
+__init__.py  test_extensions  test_models  test_server.py  
+test_server_commands.py  test_server_utils.py
+
+./tests/test_game_server/test_extensions/:
+__init__.py  test_card_game.py	test_scoreboard.py
+
+./tests/test_game_server/test_models/:
+__init__.py  test_models.py
