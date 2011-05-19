@@ -20,14 +20,23 @@ for Android project.
 Contents:
 
 + jars/libSimpleAndroidRuntime.jar
-    Jar containing a version of App Inventor's Android runtime
+    A Jar containing a version of App Inventor's Android runtime
     library.  This library jar file can be used to build Android apps
     in Java that make use of the App Inventor components.
 
 + samples/HelloHappyFace/
-    A sample Android source tree for a simple Android app that uses App Inventor components.
+    A sample Android source tree for a simple Android app that uses
+    App Inventor components.
 
 + samples/AppInventorInJavaSample/
     A more extensive sample of using App Inventor components in a
     standard Android Java program.  Includes a simple new component
     definition.
+
++ src/components
+    The source code to the App Inventor components.  This is the
+    component code that is compiled into the
+    jars/libSimpleAndroidRuntime.jar mentioned above.  This code is
+    provided mostly for use in understanding the App Inventor
+    component architecture and is intended be useful for folks wanting
+    to write their own components.
