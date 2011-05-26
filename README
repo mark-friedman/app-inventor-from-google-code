@@ -26,12 +26,23 @@ Contents:
 
 + samples/HelloHappyFace/
     A sample Android source tree for a simple Android app that uses
-    App Inventor components.
+    App Inventor components.  Note that unlike the BridgeToJava sample
+    it does yet contain all the pieces to build right out of the box -
+    it is just illustrative.
+
++ samples/BridgeToJava/
+    A more extensive and annotated sample of using App Inventor
+    components in a standard Android Java program.  It can be
+    relatively easily built out of the box via ant or imported into
+    Eclipse (assuming it contains the Android ADT plugin).  See the
+    README file in that directory for more info.
 
 + samples/AppInventorInJavaSample/
-    A more extensive sample of using App Inventor components in a
-    standard Android Java program.  Includes a simple new component
-    definition.
+    Another example of using App Inventor components in a standard
+    Android Java program.  This one also includes a simple new
+    component definition.  Note that unlike the BridgeToJava sample
+    it does yet contain all the pieces to build right out of the box -
+    it is just illustrative.
 
 + src/components
     The source code to the App Inventor components.  This is the

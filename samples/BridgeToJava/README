@@ -1,0 +1,89 @@
+The Google App Inventor Java Bridge
+
+The App Inventor Java Bridge helps make a transition from developing
+Android applications with App Inventor for Android, to developing with
+Java and the Android SDK.  It lets you incorporate App Inventor
+components into apps that you create in Java with the standard Android
+SDK tools.  If you’ve been using App Inventor and know some Java, then
+the Java Bridge is a good way to get started with the SDK, because
+building with App Inventor components hides many of the complexities
+of the Android framework.  As you gain experience, you can switch over
+to regular SDK development and create apps that harness the full power
+of Android.
+
+For entry-level computing courses that use App Inventor, introducing
+the Bridge in conjunction with a first look at Java, can give students
+a preview of more advanced material.  The Bridge can also be valuable
+in advanced courses, where students are already experienced with
+programming: Begin with App Inventor to illustrate the basic ideas of
+mobile app development, and let students start building apps right
+away.  Then introduce the Bridge and have students build apps in Java
+with the App Inventor components.  Later, ease in to the details of
+the Android framework and advanced topics in mobile development.
+
+The Bridge consists of three parts: 
+
+  * A sample project, BridgeToJava, that implements a tiny app using a
+few components.  The comments in the source code for BridgeSample.java
+provide rudimentary documention for coding using the Bridge.
+
+  * A compiled jar file, libSimpleAndroidRuntime.jar, which contains
+all the App Inventor component classes.  Include this as a library
+with your Java projects in order to use the components.
+
+  * The source code for all the App Inventor components.  You don’t
+need this to build apps with the Bridge, but you can consult it as a
+reference to see how to call the component classes from Java code.
+And you can also use the code as a model for building your own
+components.
+
+Using the Bridge
+
+To use the Bridge, you’ll need to install the Android SDK, set up a
+development environment and verifiy that you can build and run Android
+projects.  You can do this by going through the Hello World setup
+process and tutorial example on the Android Developer site.
+
+To get started with the Bridge, download the sample project from the
+App-Inventor-for-Android project at code.google.com.  You can download
+the project source code with svn (subversion): Connect to a directory
+where you typically keep Java projects and issue the command:
+
+  svn co http://app-inventor-for-android.googlecode.com/svn/trunk/samples/BridgeToJava
+
+This should create a BridgeToJava folder on your computer, with all
+the files required to build the app.
+
+To build the BridgeToJava sample project using Eclipse, use the New /
+Android Project, select “Create project from existing source” and
+enter the location of the BridgeToJava directory.  Verify that you can
+build run the BridgeSample project.
+
+To build the BridgeToJava sample at a command line using Ant, first cd to the BridgeToJava directory.  Then run
+
+  android update project -p .
+
+where android is a command found in the tools directory of your install Android sdk.  Then you should be able to run:
+
+  ant debug 
+
+or “ant release”, if your prefer.
+
+Notice that the project folder has a libs/ subfolder that contains the
+libSimpleAndroidRuntime.jar library. If you create your own project
+that uses the Bridge you’ll want to create a similar libs directory
+and put libSimpleAndroidRuntime.jar in there. You should always be
+able to get the latest version of in
+http://code.google.com/p/app-inventor-for-android/source/browse/trunk/jars/
+
+For documentation, see the BridgeSample.java source file.  Try
+changing the code to build some variants of the app.  To see how to
+use other App Inventor components, see the java source code the
+components, which is in the App-Inventor-for-Android project at
+http://code.google.com/p/app-inventor-for-android/source/browse/trunk/src/components.
+
+
+
+
+
+
