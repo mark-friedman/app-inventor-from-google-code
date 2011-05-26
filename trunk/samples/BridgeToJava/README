@@ -25,7 +25,7 @@ The Bridge consists of three parts:
 
   * A sample project, BridgeToJava, that implements a tiny app using a
 few components.  The comments in the source code for BridgeSample.java
-provide rudimentary documention for coding using the Bridge.
+provide rudimentary documentation for coding using the Bridge.
 
   * A compiled jar file, libSimpleAndroidRuntime.jar, which contains
 all the App Inventor component classes.  Include this as a library
@@ -40,7 +40,7 @@ components.
 Using the Bridge
 
 To use the Bridge, you’ll need to install the Android SDK, set up a
-development environment and verifiy that you can build and run Android
+development environment and verify that you can build and run Android
 projects.  You can do this by going through the Hello World setup
 process and tutorial example on the Android Developer site.
 
