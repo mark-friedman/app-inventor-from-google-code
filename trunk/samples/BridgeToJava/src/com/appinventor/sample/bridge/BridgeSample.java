@@ -112,7 +112,7 @@ public class BridgeSample extends Form implements HandlesEventDispatching {
       Object[] args) {
     Log.i(LOG_KEY,
         String.format("dispatchEvent called: %s, %s, %s",
-            id, eventName, component.toString()));
+          id, eventName, component.toString()));
     if (component.equals(button1) && eventName.equals("Click")) {
       button1WasClicked();
       return true;
@@ -142,9 +142,9 @@ public class BridgeSample extends Form implements HandlesEventDispatching {
     showCount();
     if (clickCount == 6) {
       notifier.ShowMessageDialog(
-          "No more button clicks for you!",
-          "Too many clicks",
-      "Start over");
+        "No more button clicks for you!",
+        "Too many clicks",
+        "Start over");
       clickCount = 0;
       showCount();
     }
