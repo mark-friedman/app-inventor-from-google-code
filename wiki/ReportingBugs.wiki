@@ -20,8 +20,6 @@ Before reporting an issue, please search the list of existing issues to see if a
 
 *Only after you've searched, and you'd like to open a new issue:* [http://code.google.com/p/app-inventor-for-android/issues/list Click here to go directly to  the issues list]* 
 
-*_ Note that adding a comment to this page is not equivalent to reporting a bug or requesting a feature!  The App Inventor development team does not generally read or track these comments._*
-
 ----
 
 The meaning of the status column in the issues list is:
