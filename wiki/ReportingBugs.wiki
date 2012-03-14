@@ -40,4 +40,5 @@ The meaning of the status column in the issues list is:
 || Duplicate    ||      This report duplicates an existing issue ||
 ||Won't Fix        ||     We decided to not take action on this issue ||
 ||Forum           ||   Please refer this issue to the group forum ||
-||MaybeObsolete   ||   We need to review this to see if it's obsolete ||Obsolete         ||  This issue is obsolete.
+||MaybeObsolete   ||   We need to review this to see if it's obsolete||
+||Obsolete         ||  This issue is obsolete. ||
