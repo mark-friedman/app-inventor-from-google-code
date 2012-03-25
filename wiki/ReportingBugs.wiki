@@ -28,7 +28,7 @@ The meaning of the status column in the issues list is:
 *Open Issues*
 
 ||New             ||      Issue has not yet been reviewed ||
-||ToConfirm       ||  The App Inventor team needs to confirm this issue ||
+||To Confirm       ||  The App Inventor team needs to confirm this issue ||
 || Investigating    || We're waiting for more information ||
 || Noted || Issue has been noted but not yet accepted for work queue ||
 ||Accepted    ||   The issue is in our prioritized work queue ||
