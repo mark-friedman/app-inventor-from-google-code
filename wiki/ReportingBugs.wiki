@@ -31,7 +31,7 @@ The meaning of the status column in the issues list is:
 ||To Confirm       ||  The App Inventor team needs to confirm this issue ||
 || Investigating    || We're waiting for more information ||
 || Noted || Issue has been noted but not yet accepted for work queue ||
-||Accepted    ||   The issue has been accepted for development work (but not yet assigned) ||
+||Accepted    ||   The issue has been accepted for development work ||
 || Started        ||       Work on this issue has begun ||
 ||Testing         ||     Work is being tested and prepared for release. ||
 
